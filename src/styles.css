@@ -4340,6 +4340,13 @@ button.close.game-button-icon,
   45%, 65% { transform: rotate(90deg); }
 }
 
+.poker-modal .poker-home {
+  position: absolute;
+  z-index: 6;
+  top: 22px;
+  right: 24px;
+}
+
 /* Compact mobile composition: prioritize the board over explanatory chrome. */
 @media (max-width: 900px) and (orientation: landscape),
        (max-height: 500px) and (orientation: landscape) {
@@ -4913,5 +4920,14 @@ button.close.game-button-icon,
 
   .game-shell > .top-hud .metrics {
     grid-template-columns: repeat(5, minmax(48px, 1fr));
+  }
+
+  .poker-modal .poker-home {
+    top: max(22px, env(safe-area-inset-top));
+    right: max(27px, env(safe-area-inset-right));
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
   }
 }

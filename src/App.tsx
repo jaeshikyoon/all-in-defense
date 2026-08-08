@@ -364,12 +364,21 @@ function EnemyGuide({ onClose, snap }: { onClose: () => void; snap: Snapshot }) 
   );
 }
 
-function PokerModal({ snap }: { snap: Snapshot }) {
+function PokerModal({ snap, onExit }: { snap: Snapshot; onExit: () => void }) {
   const result = snap.pokerResult,
     [showRewards, setShowRewards] = useState(false);
   return (
     <div className="modal-back poker-back">
       <section className="poker-modal panel">
+        <GameButton
+          variant="icon"
+          className="poker-home"
+          onClick={onExit}
+          title="기록을 저장하고 홈으로"
+          aria-label="기록을 저장하고 홈으로"
+        >
+          ⌂
+        </GameButton>
         <p className="eyebrow">PHASE {snap.phase + 1}</p>
         <h2>포커 드로우</h2>
         <div className="poker-hand">
@@ -1405,6 +1414,35 @@ export function App() {
       await saveStoredMap(revised);
       engine.enterBuilder();
     };
+  const exitToHome = async () => {
+    const selectedMap = currentMapRef.current,
+      finalSnapshot = engine.getSnapshot();
+    if (!selectedMap || finalSnapshot.state === "ready") return;
+    if (
+      !window.confirm(
+        `현재 기록을 저장하고 홈으로 돌아갈까요?\n처치 ${finalSnapshot.kills} · PHASE ${finalSnapshot.phase} · ${formatPlayTime(finalSnapshot.elapsed)}`,
+      )
+    )
+      return;
+    try {
+      await addScore({
+        mapId: selectedMap.id,
+        mapRevision: selectedMap.revision,
+        kills: finalSnapshot.kills,
+        phase: finalSnapshot.phase,
+        elapsedSeconds: finalSnapshot.elapsed,
+      });
+      const nextScores = await getMapScores(selectedMap.id, selectedMap.revision);
+      setScores(nextScores);
+      engine.setBestKills(nextScores[0]?.kills ?? 0);
+      setShowEnemyGuide(false);
+      setShowRanking(false);
+      setShowVolume(false);
+      engine.reset();
+    } catch {
+      window.alert("랭킹 기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    }
+  };
   const selected = snap.selectedUnit,
     score = snap.kills,
     grade =
@@ -1520,6 +1558,14 @@ export function App() {
           </div>
           {snap.state !== "ready" && (
             <nav className="hud-actions" aria-label="게임 메뉴">
+              <button
+                className="home-action"
+                title="기록을 저장하고 홈으로"
+                onClick={() => void exitToHome()}
+              >
+                <span aria-hidden="true">⌂</span>
+                <b>홈</b>
+              </button>
               <button
                 title="적 유닛 도감"
                 onClick={() => {
@@ -1722,7 +1768,9 @@ export function App() {
       {showRanking && (
         <RankingModal map={currentMap} scores={scores} onClose={() => setShowRanking(false)} />
       )}
-      {snap.state === "poker" && <PokerModal snap={snap} />}
+      {snap.state === "poker" && (
+        <PokerModal snap={snap} onExit={() => void exitToHome()} />
+      )}
       {snap.state === "defeat" && (
         <div className="modal-back">
           <div className="end-card panel">
