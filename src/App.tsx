@@ -1733,17 +1733,33 @@ export function App() {
           >
             {icons[selected.kind]}
           </div>
-          <div>
-            <span>선택 병력</span>
-            <b>
-              {UNITS[selected.kind].name} · T{selected.tier}
-            </b>
-            <small>
-              공격력{" "}
-              {getUnitDamage(selected.kind, selected.tier).toLocaleString()} ·
-              누적 피해 {Math.round(selected.damageDone).toLocaleString()} ·
-              이동할 곳을 클릭
-            </small>
+          <div className="selection-unit-info">
+            <div className="selection-heading">
+              <span>선택 병력</span>
+              <b>
+                {UNITS[selected.kind].name} · T{selected.tier}
+              </b>
+            </div>
+            <div className="selection-stats" aria-label="선택 병력 능력치">
+              <span>
+                <i>공격력</i>
+                <strong>
+                  {getUnitDamage(selected.kind, selected.tier).toLocaleString()}
+                </strong>
+              </span>
+              <span>
+                <i>공속</i>
+                <strong>{UNITS[selected.kind].rate.toFixed(2)}/초</strong>
+              </span>
+              <span>
+                <i>사거리</i>
+                <strong>{engine.getUnitRange(selected).toFixed(1)}</strong>
+              </span>
+              <span className="selection-stat-total">
+                <i>누적</i>
+                <strong>{Math.round(selected.damageDone).toLocaleString()}</strong>
+              </span>
+            </div>
           </div>
           <button onClick={() => engine.mergeSelected()}>합성</button>
         </div>
