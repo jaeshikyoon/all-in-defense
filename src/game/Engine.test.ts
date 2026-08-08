@@ -774,7 +774,7 @@ describe("map builder invariants", () => {
     expect(game.mapObjects.filter((object) => object.id === placed.id)).toHaveLength(1);
   });
 
-  it("does not replace a structure when painting terrain over it", () => {
+  it("replaces structures and terrain with either asset category", () => {
     const game = new GameEngine();
     game.enterBuilder();
     game.chooseBuildTool("lamp_post");
@@ -783,7 +783,14 @@ describe("map builder invariants", () => {
 
     game.chooseBuildTool("grass_patch");
     game.clickWorld(26, 12);
+    expect(game.mapById.get(placed.id)?.kind).toBe("grass_patch");
 
+    game.chooseBuildTool("antenna");
+    game.clickWorld(26, 12);
+    expect(game.mapById.get(placed.id)?.kind).toBe("antenna");
+
+    game.chooseBuildTool("lamp_post");
+    game.clickWorld(26, 12);
     expect(game.mapById.get(placed.id)?.kind).toBe("lamp_post");
     expect(game.mapObjects.filter((object) => object.id === placed.id)).toHaveLength(1);
   });

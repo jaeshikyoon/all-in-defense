@@ -1004,7 +1004,12 @@ export class GameEngine {
           ),
         };
   }
-  validBuildCell(x: number, y: number, kind: MapAssetKind) {
+  validBuildCell(
+    x: number,
+    y: number,
+    kind: MapAssetKind,
+    ignoredAssetId?: number,
+  ) {
     const spec = BUILDINGS[kind],
       radius = spec.radius;
     if (spec.category === "floor")
@@ -1017,7 +1022,10 @@ export class GameEngine {
       x >= this.mapWidth ||
       y >= this.mapHeight ||
       this.assetFootprintCells(x, y, kind).some((cell) =>
-        this.assetCells.has(this.cellKey(cell.x, cell.y)),
+        (() => {
+          const occupant = this.assetCells.get(this.cellKey(cell.x, cell.y));
+          return Boolean(occupant && occupant.id !== ignoredAssetId);
+        })(),
       )
     )
       return false;
@@ -1114,23 +1122,26 @@ export class GameEngine {
       this.emit(true);
       return;
     }
-    if (BUILDINGS[kind].category === "terrain") {
-      const targetCells = this.assetFootprintCells(target.x, target.y, kind),
-        occupants = [
-          ...new Map(
-            targetCells
-              .map((cell) => this.assetCells.get(this.cellKey(cell.x, cell.y)))
-              .filter((object): object is MapObject => Boolean(object))
-              .map((object) => [object.id, object]),
-          ).values(),
-        ];
+    const clickedCellX = Math.max(
+        0,
+        Math.min(this.mapWidth - 2, Math.floor(x / 2) * 2),
+      ),
+      clickedCellY = Math.max(
+        0,
+        Math.min(this.mapHeight - 2, Math.floor(y / 2) * 2),
+      ),
+      existing = this.assetCells.get(
+        this.cellKey(clickedCellX, clickedCellY),
+      ),
+      targetCells = this.assetFootprintCells(target.x, target.y, kind);
+    if (existing) {
       if (
-        occupants.length === 1 &&
-        BUILDINGS[occupants[0].kind].category === "terrain"
-      ) {
-        const existing = occupants[0];
-        if (existing.kind === kind && existing.x === target.x && existing.y === target.y)
-          return;
+        existing.kind === kind &&
+        existing.x === target.x &&
+        existing.y === target.y
+      )
+        return;
+      if (this.validBuildCell(target.x, target.y, kind, existing.id)) {
         for (const cell of this.assetFootprintCells(
           existing.x,
           existing.y,
@@ -1148,6 +1159,7 @@ export class GameEngine {
         this.emit(true);
         return;
       }
+      return;
     }
     if (this.validBuildCell(target.x, target.y, kind)) {
       const object = { id: this.nextMapId++, kind, x: target.x, y: target.y };
