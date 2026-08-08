@@ -1695,10 +1695,12 @@ export class GameEngine {
       e.progress += (dt * slow * worldSpeed) / routeLength;
     }
     const escaped = this.enemies.filter((e) => e.progress >= 1);
+    let gateChanged = false;
     if (escaped.length) {
       for (const e of escaped) this.gate += e.kind === "boss" ? 20 : 1;
       this.enemies = this.enemies.filter((e) => e.progress < 1);
       this.pushAudio("lose");
+      gateChanged = true;
     }
     for (const u of this.units) {
       if (u.moving) {
@@ -1768,8 +1770,12 @@ export class GameEngine {
         }
       }
       this.pushAudio("lose");
+      // No more running updates occur after defeat. Force the final snapshot
+      // so the defeat modal cannot wait for a later pointer or keyboard event.
+      this.emit(true);
+      return;
     }
-    this.emit();
+    this.emit(gateChanged);
   }
   dealDamage(
     target: Enemy,
@@ -2125,38 +2131,32 @@ export class GameEngine {
       const ids = this.selectedIds.length ? this.selectedIds : [this.selected!],
         movers = this.units.filter((u) => ids.includes(u.id)),
         movingIds = new Set(movers.map((u) => u.id)),
-        center = movers.reduce(
-          (a, u) => ({
-            x: a.x + u.x / movers.length,
-            y: a.y + u.y / movers.length,
-          }),
-          { x: 0, y: 0 },
-        ),
-        pairDistances = movers.flatMap((unit, index) =>
-          movers
-            .slice(index + 1)
-            .map((other) => distance(unit, other))
-            .filter((value) => value > 0.01),
-        ),
-        closestPair = pairDistances.length
-          ? Math.min(...pairDistances)
-          : GROUP_FORMATION_SPACING,
-        formationScale =
-          movers.length > 1
-            ? Math.max(1, GROUP_FORMATION_SPACING / closestPair)
-            : 0,
         reservedTargets: { x: number; y: number }[] = [];
-      for (const u of movers) {
+
+      // Create a new compact formation around the commanded point. Preserving
+      // old offsets made spread-out units miss the location the player chose.
+      for (let index = 0; index < movers.length; index++) {
         const target = this.nearestValidCell(
-          x + (u.x - center.x) * formationScale,
-          y + (u.y - center.y) * formationScale,
+          x,
+          y,
           movingIds,
           reservedTargets,
         );
-        if (target) {
-          u.moving = target;
-          reservedTargets.push(target);
-        }
+        if (target) reservedTargets.push(target);
+      }
+
+      // Give each unit a nearby free slot to reduce crossing while converging.
+      const availableTargets = [...reservedTargets];
+      for (const u of [...movers].sort((a, b) => a.id - b.id)) {
+        if (!availableTargets.length) break;
+        let closestIndex = 0;
+        for (let index = 1; index < availableTargets.length; index++)
+          if (
+            distance(u, availableTargets[index]) <
+            distance(u, availableTargets[closestIndex])
+          )
+            closestIndex = index;
+        u.moving = availableTargets.splice(closestIndex, 1)[0];
       }
       this.selected = null;
       this.selectedIds = [];

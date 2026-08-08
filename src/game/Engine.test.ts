@@ -519,6 +519,66 @@ describe("poker defense loop", () => {
         ).toBeGreaterThanOrEqual(2.1 - 1e-8);
   });
 
+  it("regroups spread-out selected units around the commanded destination", () => {
+    const game = new GameEngine();
+    game.state = "deploy";
+    game.units.push(
+      ...[
+        [4, 4],
+        [42, 4],
+        [4, 42],
+        [42, 42],
+      ].map(([x, y], index) => ({
+        id: 900 + index,
+        kind: "rifle" as const,
+        tier: 1,
+        x,
+        y,
+        cooldown: 0,
+        damageDone: 0,
+      })),
+    );
+    game.selectUnits(game.units.map((unit) => unit.id));
+    game.clickWorld(30, 40);
+
+    const targets = game.units.map((unit) => unit.moving!);
+    expect(targets.every(Boolean)).toBe(true);
+    expect(
+      Math.max(
+        ...targets.map((target) =>
+          Math.hypot(target.x - 30, target.y - 40),
+        ),
+      ),
+    ).toBeLessThan(8);
+  });
+
+  it("notifies subscribers immediately when gate damage causes defeat", () => {
+    const game = new GameEngine();
+    game.state = "running";
+    game.gate = 19;
+    game.phaseTotal = 0;
+    game.phaseSpawnTimes = [];
+    game.enemies.push({
+      id: 990,
+      kind: "grunt",
+      group: "gate test",
+      hp: 40,
+      maxHp: 40,
+      progress: 1,
+      slowUntil: 0,
+      route: 0,
+      lane: 0,
+    });
+    let notifications = 0;
+    game.subscribe(() => notifications++);
+
+    game.update(1 / 60);
+
+    expect(game.state).toBe("defeat");
+    expect(game.gate).toBe(20);
+    expect(notifications).toBe(1);
+  });
+
   it("turns an attacking unit toward its target and records that shot direction", () => {
     const game = new GameEngine();
     const target = game.pointAt(0.2);

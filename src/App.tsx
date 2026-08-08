@@ -1609,7 +1609,6 @@ export function App() {
     }
   };
   const selected = snap.selectedUnit,
-    score = snap.kills,
     grade =
       snap.kills >= 1000
         ? "S"
@@ -1728,8 +1727,13 @@ export function App() {
                 <small> BEST {snap.bestKills}</small>
               </b>
             </div>
-            <div className={snap.gate >= 15 ? "danger" : ""}>
-              <span>게이트 손상</span>
+            <div
+              key={`gate-${snap.gate}`}
+              className={`gate-stat${
+                snap.gate >= 15 ? " danger" : snap.gate > 0 ? " damaged" : ""
+              }`}
+            >
+              <span>{snap.gate >= 15 ? "게이트 위험" : "게이트 손상"}</span>
               <b>
                 {snap.gate}
                 <small> / 20</small>
@@ -2093,37 +2097,56 @@ export function App() {
         <PokerModal snap={snap} onExit={requestExitToHome} />
       )}
       {snap.state === "defeat" && (
-        <div className="modal-back">
-          <div className="end-card panel">
-            <div className="grade">{grade}</div>
-            <h2>게이트 함락</h2>
-            <div>
-              <b>{snap.kills}</b>
-              <span>처치</span>
-              <b>
-                {Math.floor(snap.elapsed / 60)}:
-                {String(Math.floor(snap.elapsed % 60)).padStart(2, "0")}
-              </b>
-              <span>작전 시간</span>
-              <b>{Math.round(snap.totalDamage).toLocaleString()}</b>
-              <span>총 피해</span>
-              <b>{score.toLocaleString()}</b>
-              <span>랭킹 처치 수</span>
+        <div className="modal-back defeat-back">
+          <section className="end-card panel" role="dialog" aria-modal="true">
+            <div className="defeat-heading">
+              <div className="grade" aria-label={`작전 등급 ${grade}`}>
+                {grade}
+              </div>
+              <div>
+                <span className="eyebrow">DEFENSE LINE LOST</span>
+                <h2>게이트 함락</h2>
+                <p>방어 작전 기록이 전장 랭킹에 저장되었습니다.</p>
+              </div>
             </div>
-            <small>
-              최종 PHASE {snap.phase} · 최고 기록 {snap.bestKills}킬 · 유닛{" "}
-              {snap.units}기
-            </small>
-            <GameButton
-              variant="primary"
-              onClick={() => {
-                engine.reset();
-                engine.start();
-              }}
-            >
-              다시 도전
-            </GameButton>
-          </div>
+            <div className="defeat-stats">
+              <article className="featured">
+                <span>처치</span>
+                <b>{snap.kills.toLocaleString()}</b>
+              </article>
+              <article>
+                <span>생존 PHASE</span>
+                <b>{snap.phase}</b>
+              </article>
+              <article>
+                <span>작전 시간</span>
+                <b>{formatPlayTime(snap.elapsed)}</b>
+              </article>
+              <article>
+                <span>총 피해</span>
+                <b>{Math.round(snap.totalDamage).toLocaleString()}</b>
+              </article>
+            </div>
+            <div className="defeat-summary">
+              <span>최고 기록 <b>{snap.bestKills.toLocaleString()}</b></span>
+              <i aria-hidden="true" />
+              <span>잔존 유닛 <b>{snap.units}</b></span>
+            </div>
+            <div className="defeat-actions">
+              <GameButton variant="secondary" onClick={() => engine.reset()}>
+                전장 선택
+              </GameButton>
+              <GameButton
+                variant="primary"
+                onClick={() => {
+                  engine.reset();
+                  engine.start();
+                }}
+              >
+                다시 도전
+              </GameButton>
+            </div>
+          </section>
         </div>
       )}
       <div className="rotate">

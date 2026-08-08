@@ -4836,6 +4836,195 @@ button.close.game-button-icon,
   }
 }
 
+/* Defeat report: compact operation summary with a clear retry path. */
+.top-hud .gate-stat.damaged,
+.top-hud .gate-stat.danger {
+  animation: gate-damage-pulse 0.62s ease-out;
+}
+
+.top-hud .gate-stat.damaged > b {
+  color: #ffce78;
+}
+
+.top-hud .gate-stat.danger {
+  border-color: rgba(255, 91, 105, 0.42);
+  background: linear-gradient(180deg, rgba(91, 20, 29, 0.4), rgba(8, 24, 33, 0.72));
+}
+
+@keyframes gate-damage-pulse {
+  0% {
+    box-shadow: inset 0 0 0 2px rgba(255, 101, 112, 0.9), 0 0 22px rgba(255, 74, 92, 0.52);
+    transform: translateY(-2px);
+  }
+  100% {
+    box-shadow: none;
+    transform: translateY(0);
+  }
+}
+
+.end-card {
+  box-sizing: border-box;
+  width: min(600px, calc(100vw - 56px));
+  padding: 38px 42px 34px;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 184, 77, 0.08), transparent 42%),
+    linear-gradient(155deg, rgba(9, 28, 39, 0.98), rgba(4, 16, 24, 0.99));
+  text-align: left;
+}
+
+.end-card > .defeat-heading {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin: 0 0 28px;
+}
+
+.end-card .grade {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 82px;
+  height: 82px;
+  margin: 0;
+  border: 2px solid #ffca68;
+  border-radius: 50%;
+  color: #ffca68;
+  font: 46px/1 Impact, sans-serif;
+  box-shadow: inset 0 0 24px rgba(255, 202, 104, 0.08), 0 0 26px rgba(255, 202, 104, 0.13);
+}
+
+.end-card .defeat-heading h2 {
+  margin: 5px 0 2px;
+  color: #effaff;
+  font: 38px/1.1 "Black Han Sans", sans-serif;
+  letter-spacing: -1px;
+}
+
+.end-card .defeat-heading p {
+  margin: 7px 0 0;
+  color: #849ba7;
+  font-size: var(--game-font-min);
+}
+
+.end-card > .defeat-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.defeat-stats article {
+  min-width: 0;
+  padding: 15px 10px 13px;
+  border: 1px solid rgba(92, 145, 163, 0.24);
+  border-radius: 8px;
+  background: rgba(6, 20, 29, 0.8);
+  text-align: center;
+}
+
+.defeat-stats article.featured {
+  border-color: rgba(255, 202, 104, 0.4);
+  background: linear-gradient(180deg, rgba(84, 61, 25, 0.28), rgba(6, 20, 29, 0.84));
+}
+
+.defeat-stats span {
+  display: block;
+  margin-bottom: 5px;
+  color: #86a0ab;
+  font-size: var(--game-font-min);
+  white-space: nowrap;
+}
+
+.defeat-stats b {
+  display: block;
+  overflow: hidden;
+  color: #edf8fc;
+  font-size: clamp(17px, 2vw, 23px);
+  line-height: 1.15;
+  text-overflow: ellipsis;
+}
+
+.end-card > .defeat-summary {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 18px 0 23px;
+  color: #91a7b0;
+  font-size: var(--game-font-min);
+}
+
+.defeat-summary b {
+  margin-left: 5px;
+  color: #d7e8ed;
+}
+
+.defeat-summary i {
+  width: 1px;
+  height: 13px;
+  background: #38515c;
+}
+
+.end-card > .defeat-actions {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(180px, 1.3fr);
+  gap: 10px;
+  margin: 0;
+}
+
+.defeat-actions .game-button {
+  min-height: 50px;
+  font-size: 15px;
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  .defeat-back {
+    padding: 10px 24px;
+  }
+
+  .defeat-back .end-card {
+    width: min(660px, calc(100vw - 56px));
+    height: auto;
+    max-height: calc(100dvh - 24px);
+    padding: 22px 30px 20px;
+  }
+
+  .end-card > .defeat-heading {
+    gap: 18px;
+    margin-bottom: 17px;
+  }
+
+  .end-card .grade {
+    width: 62px;
+    height: 62px;
+    font-size: 36px;
+  }
+
+  .end-card .defeat-heading h2 {
+    font-size: 29px;
+  }
+
+  .end-card .defeat-heading p {
+    margin-top: 3px;
+  }
+
+  .defeat-stats article {
+    padding: 9px 8px;
+  }
+
+  .end-card > .defeat-summary {
+    margin: 12px 0 14px;
+  }
+
+  .defeat-actions .game-button {
+    min-height: 43px;
+  }
+}
+
 @keyframes rotate-device-hint {
   0%, 100% { transform: rotate(0deg); }
   45%, 65% { transform: rotate(90deg); }
