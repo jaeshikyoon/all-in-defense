@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { GameEngine, PHASE_COMBAT_SECONDS, type Unit } from "./Engine";
+import {
+  GameEngine,
+  PHASE_COMBAT_SECONDS,
+  PHASE_ENEMY_COUNT,
+  PHASE_SPAWN_INTERVAL_SECONDS,
+  type Unit,
+} from "./Engine";
 import {
   ENEMIES,
   ENEMY_ASSET_FILES,
@@ -153,11 +159,11 @@ describe("poker defense loop", () => {
     expect(game.enemies).toHaveLength(1);
   });
 
-  it("spawns continuously by phase-time progress and empties the queue by 30 seconds", () => {
+  it("spawns at the same fixed cadence throughout every 30-second phase", () => {
     const game = new GameEngine();
     game.phase = 4;
     game.state = "running";
-    game.queue = Array.from({ length: 30 }, () => ({
+    game.queue = Array.from({ length: PHASE_ENEMY_COUNT }, () => ({
       kind: "juggernaut" as const,
       group: "PHASE 4",
     }));
@@ -165,21 +171,27 @@ describe("poker defense loop", () => {
     game.phaseSpawned = 0;
 
     game.update(10);
-    expect(game.phaseSpawned).toBe(10);
-    expect(game.queue).toHaveLength(20);
+    expect(game.phaseSpawned).toBe(
+      Math.floor(10 / PHASE_SPAWN_INTERVAL_SECONDS),
+    );
+    expect(game.queue).toHaveLength(27);
     expect(game.state).toBe("running");
 
     game.update(10);
-    expect(game.phaseSpawned).toBe(20);
-    expect(game.queue).toHaveLength(10);
+    expect(game.phaseSpawned).toBe(
+      Math.floor(20 / PHASE_SPAWN_INTERVAL_SECONDS),
+    );
+    expect(game.queue).toHaveLength(14);
 
     game.update(9);
-    expect(game.phaseSpawned).toBe(29);
-    expect(game.queue).toHaveLength(1);
+    expect(game.phaseSpawned).toBe(
+      Math.floor(29 / PHASE_SPAWN_INTERVAL_SECONDS),
+    );
+    expect(game.queue).toHaveLength(2);
     expect(game.state).toBe("running");
 
     game.update(1);
-    expect(game.phaseSpawned).toBe(30);
+    expect(game.phaseSpawned).toBe(PHASE_ENEMY_COUNT);
     expect(game.queue).toHaveLength(0);
     expect(game.state).toBe("poker");
   });
@@ -221,13 +233,13 @@ describe("poker defense loop", () => {
       phase30 = game.phasePlan(30),
       phase100 = game.phasePlan(100);
 
-    expect(phase2).toHaveLength(22);
-    expect(phase10).toHaveLength(38);
-    expect(phase30).toHaveLength(44);
-    expect(phase100).toHaveLength(44);
+    expect(phase2).toHaveLength(PHASE_ENEMY_COUNT);
+    expect(phase10).toHaveLength(PHASE_ENEMY_COUNT);
+    expect(phase30).toHaveLength(PHASE_ENEMY_COUNT);
+    expect(phase100).toHaveLength(PHASE_ENEMY_COUNT);
     expect(phase10.at(-1)?.kind).toBe("boss");
     expect(phase30.filter((enemy) => enemy.kind === "boss")).toHaveLength(2);
-    expect(phase100.length).toBeLessThanOrEqual(44);
+    expect(phase100.length).toBe(PHASE_ENEMY_COUNT);
     expect(
       phase30.filter((enemy) =>
         ["elite", "juggernaut", "warden", "boss"].includes(enemy.kind),
@@ -335,7 +347,6 @@ describe("poker defense loop", () => {
     const game = new GameEngine();
     game.state = "running";
     game.queue = [{ kind: "grunt", group: "pending" }];
-    game.spawnClock = -100;
     game.enemies.push({
       id: 991,
       kind: "grunt",

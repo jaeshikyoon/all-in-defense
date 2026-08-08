@@ -150,6 +150,10 @@ export type Snapshot = {
 };
 
 export const PHASE_COMBAT_SECONDS = 30;
+export const PHASE_SPAWN_INTERVAL_SECONDS = 0.75;
+export const PHASE_ENEMY_COUNT = Math.floor(
+  PHASE_COMBAT_SECONDS / PHASE_SPAWN_INTERVAL_SECONDS,
+);
 
 const tierRange = [1, 1, 1.05, 1.1, 1.15];
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
@@ -212,7 +216,6 @@ export class GameEngine {
   placing: UnitKind | null = null;
   nextId = 1;
   queue: { kind: EnemyKind; group: string }[] = [];
-  spawnClock = 0;
   spawned = 0;
   bossSpawned = false;
   bossDefeated = false;
@@ -348,7 +351,6 @@ export class GameEngine {
     this.pokerResult = null;
     this.pendingUnits = [];
     this.spawned = 0;
-    this.spawnClock = 0;
     this.bossSpawned = false;
     this.bossDefeated = false;
     this.message = "";
@@ -1089,24 +1091,33 @@ export class GameEngine {
       add("warden", Math.min(Math.floor((phase - 7) / 3), 4), out);
     if (phase % 10 === 0) add("boss", 1 + Math.floor(phase / 30), out);
 
-    // Keep endless phases brisk. Difficulty grows through the stronger mix
-    // and the existing HP scale, not through an endlessly growing queue.
-    const phaseLimit = 18 + Math.min(Math.max(0, phase) * 2, 26);
-    if (out.length <= phaseLimit) return out;
-
+    // Every phase fills the same 30-second combat window at the same cadence.
+    // Difficulty grows through the stronger mix and existing HP scaling, not
+    // by stretching a small phase plan over the whole window.
+    const phaseLimit = PHASE_ENEMY_COUNT;
     const bosses = out.filter((entry) => entry.kind === "boss"),
       regular = out.filter((entry) => entry.kind !== "boss"),
       regularSlots = Math.max(0, phaseLimit - bosses.length),
       selectedIndices: number[] = [];
-    let cursor = -1;
-    for (let i = 0; i < regularSlots; i++) {
-      const progress = regularSlots <= 1 ? 1 : i / (regularSlots - 1),
-        desired = Math.round(Math.pow(progress, 0.72) * (regular.length - 1)),
-        minIndex = cursor + 1,
-        maxIndex = regular.length - (regularSlots - i),
-        index = Math.max(minIndex, Math.min(maxIndex, desired));
-      selectedIndices.push(index);
-      cursor = index;
+    if (regular.length >= regularSlots) {
+      let cursor = -1;
+      for (let i = 0; i < regularSlots; i++) {
+        const progress = regularSlots <= 1 ? 1 : i / (regularSlots - 1),
+          desired = Math.round(Math.pow(progress, 0.72) * (regular.length - 1)),
+          minIndex = cursor + 1,
+          maxIndex = regular.length - (regularSlots - i),
+          index = Math.max(minIndex, Math.min(maxIndex, desired));
+        selectedIndices.push(index);
+        cursor = index;
+      }
+    } else if (regular.length) {
+      for (let i = 0; i < regularSlots; i++)
+        selectedIndices.push(
+          Math.min(
+            regular.length - 1,
+            Math.floor(((i + 0.5) * regular.length) / regularSlots),
+          ),
+        );
     }
     const includedKinds = new Set(
       selectedIndices.map((index) => regular[index].kind),
@@ -1136,7 +1147,6 @@ export class GameEngine {
     this.phaseSpawned = 0;
     this.phaseEnding = 0;
     this.phaseElapsed = 0;
-    this.spawnClock = 0;
     this.state = "running";
     this.placing = null;
     this.lastSpawnedGroup = `PHASE ${this.phase}`;
@@ -1339,15 +1349,13 @@ export class GameEngine {
     this.elapsed += dt;
     this.phaseElapsed += dt;
     if (this.message && this.elapsed >= this.messageUntil) this.message = "";
-    // Derive spawn progress from phase time instead of accumulating an
-    // interval. This guarantees mobile frame drops cannot leave queued units
-    // behind when the 30-second combat window ends.
+    // Spawn at a fixed cadence in every phase. Deriving the count from elapsed
+    // time still catches up safely after a slow mobile frame.
     const scheduledSpawned = Math.min(
       this.phaseTotal,
-      Math.ceil(
-        (Math.min(this.phaseElapsed, PHASE_COMBAT_SECONDS) /
-          PHASE_COMBAT_SECONDS) *
-          this.phaseTotal,
+      Math.floor(
+        Math.min(this.phaseElapsed, PHASE_COMBAT_SECONDS) /
+          PHASE_SPAWN_INTERVAL_SECONDS,
       ),
     );
     while (this.queue.length && this.phaseSpawned < scheduledSpawned) {
