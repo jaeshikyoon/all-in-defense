@@ -352,7 +352,16 @@ function EnemyGuide({ onClose, snap }: { onClose: () => void; snap: Snapshot }) 
                     {phaseInfo.cycle ? ` · ${phaseInfo.cycle} PHASE 주기` : "부터"}
                   </span>
                   <span className="enemy-current-hp">
-                    <i>현재 P{phase}</i> HP {currentHp.toLocaleString()}
+                    {unlocked ? (
+                      <>
+                        <i>현재 P{phase}</i> HP {currentHp.toLocaleString()}
+                      </>
+                    ) : (
+                      <>
+                        <i>등장 전</i> P{phaseInfo.firstPhase} 기본 HP{" "}
+                        {enemy.hp.toLocaleString()}
+                      </>
+                    )}
                   </span>
                 </div>
               </article>

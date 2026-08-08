@@ -8,12 +8,14 @@ import {
 import {
   ENEMIES,
   ENEMY_ASSET_FILES,
+  ENEMY_PHASE_INFO,
   getStrongDamageMultiplier,
   getUnitDamage,
   STRONG_DAMAGE_MULTIPLIERS,
   TIER_DAMAGE_MULTIPLIERS,
   UNIT_ASSET_FILES,
   UNITS,
+  type EnemyKind,
   type UnitKind,
 } from "./data";
 
@@ -543,13 +545,21 @@ describe("poker defense loop", () => {
     );
   });
 
-  it("keeps the original predictable enemy health curve", () => {
+  it("starts each enemy health curve at its debut and preserves phase 30 balance", () => {
     const game = new GameEngine();
-    expect(game.getEnemyHealthScale(1)).toBe(1);
-    expect(game.getEnemyHealthScale(10)).toBeCloseTo(2.08, 3);
-    expect(game.getEnemyHealthScale(20)).toBeCloseTo(3.53, 3);
-    expect(game.getEnemyMaxHp("boss", 10)).toBe(14560);
+    for (const kind of Object.keys(ENEMIES) as EnemyKind[]) {
+      const debut = ENEMY_PHASE_INFO[kind].firstPhase;
+      expect(game.getEnemyHealthScale(kind, debut - 1)).toBe(1);
+      expect(game.getEnemyHealthScale(kind, debut)).toBe(1);
+      expect(game.getEnemyMaxHp(kind, debut)).toBe(ENEMIES[kind].hp);
+      expect(game.getEnemyHealthScale(kind, 30)).toBeCloseTo(4.98, 8);
+    }
+    expect(game.getEnemyHealthScale("grunt", 10)).toBeCloseTo(2.08, 3);
+    expect(game.getEnemyHealthScale("grunt", 20)).toBeCloseTo(3.53, 3);
+    expect(game.getEnemyMaxHp("boss", 10)).toBe(7000);
+    expect(game.getEnemyMaxHp("boss", 20)).toBe(20930);
     expect(game.getEnemyMaxHp("grunt", 20)).toBe(141);
+    expect(game.getEnemyHealthScale("boss", 40)).toBeCloseTo(6.43, 8);
   });
 
   it("makes a straight sniper stronger than a one-pair rifle against one target", () => {

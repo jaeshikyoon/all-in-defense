@@ -2,6 +2,7 @@ import {
   BUILDINGS,
   CRYO_SLOWED_SPEED_MULTIPLIER,
   ENEMIES,
+  ENEMY_PHASE_INFO,
   getStrongDamageMultiplier,
   getUnitDamage,
   GROUPS,
@@ -1258,13 +1259,25 @@ export class GameEngine {
   getUnitRange(unit: Pick<Unit, "kind" | "tier">) {
     return UNITS[unit.kind].range * tierRange[unit.tier];
   }
-  getEnemyHealthScale(phase = this.phase) {
+  getEnemyHealthScale(kind: EnemyKind, phase = this.phase) {
     const safePhase = Math.max(1, phase),
-      elapsedPhases = safePhase - 1;
-    return 1 + elapsedPhases * 0.12 + Math.floor(elapsedPhases / 10) * 0.25;
+      firstPhase = ENEMY_PHASE_INFO[kind].firstPhase,
+      growthAt = (elapsedPhases: number) =>
+        elapsedPhases * 0.12 + Math.floor(elapsedPhases / 10) * 0.25,
+      phase30Scale = 1 + growthAt(29);
+    if (safePhase <= firstPhase) return 1;
+    if (safePhase >= 30)
+      return phase30Scale + growthAt(Math.max(0, safePhase - 30));
+
+    const activePhases = safePhase - firstPhase,
+      activePhasesAt30 = 30 - firstPhase,
+      growthAt30 = growthAt(activePhasesAt30);
+    return 1 + growthAt(activePhases) * ((phase30Scale - 1) / growthAt30);
   }
   getEnemyMaxHp(kind: EnemyKind, phase = this.phase) {
-    return Math.round(ENEMIES[kind].hp * this.getEnemyHealthScale(phase));
+    return Math.round(
+      ENEMIES[kind].hp * this.getEnemyHealthScale(kind, phase),
+    );
   }
   tutorial() {
     if (this.phase === 1 && this.kills === 0)
