@@ -3274,7 +3274,7 @@ em {
 }
 
 /* Image-backed 9-slice fortress frame: corners stay fixed, wall rails extend. */
-:where(.poker-modal, .wheel-modal, .enemy-guide, .ranking-modal, .end-card) {
+:where(.poker-modal, .wheel-modal, .enemy-guide, .ranking-modal, .end-card, .exit-confirm-card) {
   position: relative;
   isolation: isolate;
   border: 1px solid #294550;
@@ -3282,7 +3282,7 @@ em {
     0 24px 70px rgba(0, 0, 0, 0.68),
     inset 0 0 0 1px rgba(115, 229, 217, 0.08);
 }
-:where(.poker-modal, .wheel-modal, .enemy-guide, .ranking-modal, .end-card)::before {
+:where(.poker-modal, .wheel-modal, .enemy-guide, .ranking-modal, .end-card, .exit-confirm-card)::before {
   content: "";
   position: absolute;
   z-index: 0;
@@ -3296,7 +3296,7 @@ em {
   filter: drop-shadow(0 9px 12px rgba(0, 0, 0, 0.72))
     drop-shadow(0 0 5px rgba(50, 205, 218, 0.16));
 }
-:where(.poker-modal, .wheel-modal, .enemy-guide, .ranking-modal, .end-card) > * {
+:where(.poker-modal, .wheel-modal, .enemy-guide, .ranking-modal, .end-card, .exit-confirm-card) > * {
   position: relative;
   z-index: 1;
 }
@@ -4929,5 +4929,138 @@ button.close.game-button-icon,
     min-width: 36px;
     height: 36px;
     min-height: 36px;
+  }
+}
+
+.exit-confirm-back {
+  z-index: 70;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(25, 83, 88, 0.22), transparent 48%),
+    rgba(1, 7, 11, 0.86);
+}
+
+.exit-confirm-card {
+  width: min(520px, calc(100vw - 36px));
+  padding: 30px 34px 28px;
+  border-radius: 12px;
+  background: linear-gradient(155deg, #0b222c, #06131b);
+  text-align: center;
+}
+
+.exit-confirm-card h2 {
+  margin: 8px 0 6px;
+  color: #effbfe;
+  font: 28px "Black Han Sans", sans-serif;
+}
+
+.exit-confirm-card > p:not(.exit-error) {
+  margin: 0;
+  color: #9db2ba;
+  font-size: 13px;
+}
+
+.exit-record-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin: 20px 0 12px;
+}
+
+.exit-record-grid > div {
+  min-width: 0;
+  padding: 12px 7px;
+  border: 1px solid #345763;
+  border-radius: 7px;
+  background: #071821;
+}
+
+.exit-record-grid span,
+.exit-record-grid b {
+  display: block;
+}
+
+.exit-record-grid span {
+  margin-bottom: 5px;
+  color: #7f9aa3;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.exit-record-grid b {
+  overflow: hidden;
+  color: #72e7ce;
+  font-size: 21px;
+  text-overflow: ellipsis;
+}
+
+.exit-confirm-card > small {
+  color: #7e959e;
+  font-size: 11px;
+}
+
+.exit-error {
+  margin: 9px 0 0;
+  color: #ff9ca7;
+  font-size: 12px;
+}
+
+.exit-confirm-actions {
+  display: grid;
+  grid-template-columns: 0.85fr 1.25fr;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.exit-confirm-actions .game-button {
+  min-height: 46px;
+}
+
+@media (max-width: 900px) and (orientation: landscape),
+       (max-height: 500px) and (orientation: landscape) {
+  .exit-confirm-card {
+    width: min(500px, calc(100vw - 34px));
+    max-height: calc(100dvh - 24px);
+    padding: 18px 28px 16px;
+  }
+
+  .exit-confirm-card::before {
+    inset: -7px;
+    border-width: 18px;
+    border-image-width: 18px;
+  }
+
+  .exit-confirm-card h2 {
+    margin: 3px 0;
+    font-size: 21px;
+  }
+
+  .exit-confirm-card > p:not(.exit-error) {
+    font-size: 11px;
+  }
+
+  .exit-record-grid {
+    gap: 5px;
+    margin: 10px 0 7px;
+  }
+
+  .exit-record-grid > div {
+    padding: 7px 5px;
+  }
+
+  .exit-record-grid span {
+    margin-bottom: 2px;
+    font-size: 10px;
+  }
+
+  .exit-record-grid b {
+    font-size: 16px;
+  }
+
+  .exit-confirm-actions {
+    margin-top: 10px;
+  }
+
+  .exit-confirm-actions .game-button {
+    min-height: 40px;
   }
 }

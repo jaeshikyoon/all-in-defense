@@ -1227,6 +1227,9 @@ export function App() {
     [soundEnabled, setSoundEnabled] = useState(gameAudio.enabled),
     [soundVolume, setSoundVolume] = useState(gameAudio.volume),
     [showVolume, setShowVolume] = useState(false),
+    [showExitConfirm, setShowExitConfirm] = useState(false),
+    [exitSaving, setExitSaving] = useState(false),
+    [exitError, setExitError] = useState(""),
     [maps, setMaps] = useState<StoredMap[]>([]),
     [currentMap, setCurrentMap] = useState<StoredMap | null>(null),
     [scores, setScores] = useState<ScoreRecord[]>([]),
@@ -1255,10 +1258,15 @@ export function App() {
       setShowEnemyGuide(false);
       setShowRanking(false);
       setShowVolume(false);
+      if (showExitConfirm && !exitSaving) {
+        setShowExitConfirm(false);
+        setExitError("");
+        engine.setPaused(false);
+      }
     };
     window.addEventListener("keydown", closeOverlay);
     return () => window.removeEventListener("keydown", closeOverlay);
-  }, []);
+  }, [showExitConfirm, exitSaving]);
   useEffect(() => {
     if (!showVolume) return;
     const closeVolume = (event: PointerEvent) => {
@@ -1414,16 +1422,24 @@ export function App() {
       await saveStoredMap(revised);
       engine.enterBuilder();
     };
-  const exitToHome = async () => {
+  const requestExitToHome = () => {
+      setExitError("");
+      setShowVolume(false);
+      setShowExitConfirm(true);
+      engine.setPaused(true);
+    },
+    cancelExitToHome = () => {
+      if (exitSaving) return;
+      setShowExitConfirm(false);
+      setExitError("");
+      engine.setPaused(false);
+    },
+    exitToHome = async () => {
     const selectedMap = currentMapRef.current,
       finalSnapshot = engine.getSnapshot();
     if (!selectedMap || finalSnapshot.state === "ready") return;
-    if (
-      !window.confirm(
-        `현재 기록을 저장하고 홈으로 돌아갈까요?\n처치 ${finalSnapshot.kills} · PHASE ${finalSnapshot.phase} · ${formatPlayTime(finalSnapshot.elapsed)}`,
-      )
-    )
-      return;
+    setExitSaving(true);
+    setExitError("");
     try {
       await addScore({
         mapId: selectedMap.id,
@@ -1438,9 +1454,12 @@ export function App() {
       setShowEnemyGuide(false);
       setShowRanking(false);
       setShowVolume(false);
+      setShowExitConfirm(false);
       engine.reset();
     } catch {
-      window.alert("랭킹 기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      setExitError("랭킹 기록을 저장하지 못했습니다. 다시 시도해 주세요.");
+    } finally {
+      setExitSaving(false);
     }
   };
   const selected = snap.selectedUnit,
@@ -1561,7 +1580,7 @@ export function App() {
               <button
                 className="home-action"
                 title="기록을 저장하고 홈으로"
-                onClick={() => void exitToHome()}
+                onClick={requestExitToHome}
               >
                 <span aria-hidden="true">⌂</span>
                 <b>홈</b>
@@ -1768,8 +1787,45 @@ export function App() {
       {showRanking && (
         <RankingModal map={currentMap} scores={scores} onClose={() => setShowRanking(false)} />
       )}
+      {showExitConfirm && (
+        <div className="modal-back exit-confirm-back" role="presentation">
+          <section
+            className="exit-confirm-card panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="exit-confirm-title"
+          >
+            <span className="eyebrow">OPERATION RECORD</span>
+            <h2 id="exit-confirm-title">작전을 종료할까요?</h2>
+            <p>현재 전투 기록을 저장하고 전장 선택 화면으로 돌아갑니다.</p>
+            <div className="exit-record-grid">
+              <div><span>처치</span><b>{snap.kills.toLocaleString()}</b></div>
+              <div><span>PHASE</span><b>{snap.phase}</b></div>
+              <div><span>작전 시간</span><b>{formatPlayTime(snap.elapsed)}</b></div>
+            </div>
+            <small>이 기록은 현재 전장의 LOCAL RANKING에 반영됩니다.</small>
+            {exitError && <p className="exit-error">{exitError}</p>}
+            <div className="exit-confirm-actions">
+              <GameButton
+                variant="secondary"
+                disabled={exitSaving}
+                onClick={cancelExitToHome}
+              >
+                계속 플레이
+              </GameButton>
+              <GameButton
+                variant="primary"
+                disabled={exitSaving}
+                onClick={() => void exitToHome()}
+              >
+                {exitSaving ? "기록 저장 중…" : "기록 저장 · 홈으로"}
+              </GameButton>
+            </div>
+          </section>
+        </div>
+      )}
       {snap.state === "poker" && (
-        <PokerModal snap={snap} onExit={() => void exitToHome()} />
+        <PokerModal snap={snap} onExit={requestExitToHome} />
       )}
       {snap.state === "defeat" && (
         <div className="modal-back">

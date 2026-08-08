@@ -259,6 +259,7 @@ export class GameEngine {
   phaseTotal = 0;
   phaseEnding = 0;
   phaseElapsed = 0;
+  uiPaused = false;
   deck: Card[] = [];
   hand: Card[] = [];
   discarded = new Set<number>();
@@ -313,6 +314,7 @@ export class GameEngine {
       this.routeStartPhases[0] = 1;
   }
   reset() {
+    this.uiPaused = false;
     this.state = "ready";
     this.points = 0;
     this.gate = 0;
@@ -1154,6 +1156,10 @@ export class GameEngine {
       this.listeners.forEach((f) => f());
     }
   }
+  setPaused(paused: boolean) {
+    this.uiPaused = paused;
+    this.emit(true);
+  }
   setMessage(text: string, seconds = 2.5) {
     this.message = text;
     this.messageUntil = this.elapsed + seconds;
@@ -1311,6 +1317,7 @@ export class GameEngine {
   }
 
   update(dt: number) {
+    if (this.uiPaused) return;
     if (this.state === "deploy") {
       for (const u of this.units) {
         if (!u.moving) continue;

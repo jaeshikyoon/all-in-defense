@@ -122,6 +122,20 @@ describe("poker defense loop", () => {
     expect(game.phaseTotal).toBe(game.phasePlan(1).length);
   });
 
+  it("pauses combat while a blocking game dialog is open", () => {
+    const game = new GameEngine();
+    game.state = "running";
+    game.setPaused(true);
+    game.update(2);
+    expect(game.elapsed).toBe(0);
+    expect(game.phaseElapsed).toBe(0);
+
+    game.setPaused(false);
+    game.update(1);
+    expect(game.elapsed).toBe(1);
+    expect(game.phaseElapsed).toBe(1);
+  });
+
   it("opens the next poker draw after scheduled spawning ends while survivors remain", () => {
     const game = new GameEngine();
     skipDeployment(game);
