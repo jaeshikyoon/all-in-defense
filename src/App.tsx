@@ -379,15 +379,17 @@ function PokerModal({ snap, onExit }: { snap: Snapshot; onExit: () => void }) {
   return (
     <div className="modal-back poker-back">
       <section className="poker-modal panel">
-        <GameButton
-          variant="icon"
-          className="poker-home"
-          onClick={onExit}
-          title="기록을 저장하고 홈으로"
-          aria-label="기록을 저장하고 홈으로"
-        >
-          ⌂
-        </GameButton>
+        {!showRewards && (
+          <GameButton
+            variant="icon"
+            className="poker-home"
+            onClick={onExit}
+            title="기록을 저장하고 홈으로"
+            aria-label="기록을 저장하고 홈으로"
+          >
+            ⌂
+          </GameButton>
+        )}
         <p className="eyebrow">PHASE {snap.phase + 1}</p>
         <h2>포커 드로우</h2>
         <div className="poker-hand">
