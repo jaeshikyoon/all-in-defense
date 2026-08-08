@@ -159,6 +159,16 @@ export type Snapshot = {
 export const PHASE_COMBAT_SECONDS = 30;
 export const PHASE_ENEMY_COUNT = 72;
 const PHASE_FIRST_SPAWN_DELAY_SECONDS = 0.15;
+const MIDGAME_PRESSURE_START_PHASE = 10;
+const MAX_COMPOSITION_PROMOTION_RATE = 0.65;
+const LATE_HEALTH_ACCELERATION = 0.006;
+const PROMOTABLE_ENEMY_KINDS = new Set<EnemyKind>([
+  "grunt",
+  "runner",
+  "drone",
+  "sapper",
+  "phantom",
+]);
 const ENEMY_SPAWN_PROFILE: Record<
   EnemyKind,
   { groupSize: number; memberInterval: number; rest: number }
@@ -1162,7 +1172,40 @@ export class GameEngine {
       includedKinds.add(kind);
     }
     selectedIndices.sort((a, b) => a - b);
-    return [...selectedIndices.map((index) => regular[index]), ...bosses];
+    const selectedRegulars = selectedIndices.map((index) => regular[index]);
+    return [...this.escalatePhaseComposition(selectedRegulars, phase), ...bosses];
+  }
+  escalatePhaseComposition(plan: EnemyQueueEntry[], phase: number) {
+    if (phase <= MIDGAME_PRESSURE_START_PHASE) return plan;
+
+    const result = plan.map((entry) => ({ ...entry })),
+      candidates = result
+        .map((entry, index) => ({ entry, index }))
+        .filter(({ entry }) => PROMOTABLE_ENEMY_KINDS.has(entry.kind)),
+      promotionRate = Math.min(
+        MAX_COMPOSITION_PROMOTION_RATE,
+        (phase - MIDGAME_PRESSURE_START_PHASE) * 0.025,
+      ),
+      promotionCount = Math.min(
+        candidates.length,
+        Math.floor(result.length * promotionRate),
+      ),
+      promotedKinds: EnemyKind[] =
+        phase < 20
+          ? ["armored", "brute", "elite"]
+          : phase < 30
+            ? ["elite", "juggernaut", "warden"]
+            : ["juggernaut", "warden", "elite"];
+
+    for (let i = 0; i < promotionCount; i++) {
+      const candidateIndex = Math.min(
+        candidates.length - 1,
+        Math.floor(((i + 0.5) * candidates.length) / promotionCount),
+      );
+      result[candidates[candidateIndex].index].kind =
+        promotedKinds[(i + phase) % promotedKinds.length];
+    }
+    return result;
   }
   buildPhaseDeployment(plan: EnemyQueueEntry[]) {
     const buckets = new Map<EnemyKind, EnemyQueueEntry[]>();
@@ -1279,8 +1322,14 @@ export class GameEngine {
         elapsedPhases * 0.12 + Math.floor(elapsedPhases / 10) * 0.25,
       phase30Scale = 1 + growthAt(29);
     if (safePhase <= firstPhase) return 1;
-    if (safePhase >= 30)
-      return phase30Scale + growthAt(Math.max(0, safePhase - 30));
+    if (safePhase >= 30) {
+      const latePhases = Math.max(0, safePhase - 30);
+      return (
+        phase30Scale +
+        growthAt(latePhases) +
+        latePhases * latePhases * LATE_HEALTH_ACCELERATION
+      );
+    }
 
     const activePhases = safePhase - firstPhase,
       activePhasesAt30 = 30 - firstPhase,

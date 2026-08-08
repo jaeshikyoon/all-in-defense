@@ -274,6 +274,25 @@ describe("poker defense loop", () => {
     ).toBeGreaterThan(5);
   });
 
+  it("keeps the opening intact and progressively promotes midgame squads", () => {
+    const game = new GameEngine(),
+      basePlan = Array.from({ length: 40 }, () => ({
+        kind: "grunt" as const,
+        group: "test",
+      })),
+      opening = game.escalatePhaseComposition(basePlan, 10),
+      midgame = game.escalatePhaseComposition(basePlan, 20),
+      lateGame = game.escalatePhaseComposition(basePlan, 40),
+      promotedCount = (plan: { kind: EnemyKind }[]) =>
+        plan.filter((enemy) => enemy.kind !== "grunt").length;
+
+    expect(promotedCount(opening)).toBe(0);
+    expect(promotedCount(midgame)).toBe(10);
+    expect(promotedCount(lateGame)).toBe(26);
+    expect(game.phasePlan(20)).toHaveLength(PHASE_ENEMY_COUNT);
+    expect(game.phasePlan(40)).toHaveLength(PHASE_ENEMY_COUNT);
+  });
+
   it("continues to another poker draw after a boss phase instead of winning", () => {
     const game = new GameEngine();
     game.phase = 10;
@@ -578,7 +597,10 @@ describe("poker defense loop", () => {
     expect(game.getEnemyMaxHp("boss", 10)).toBe(7000);
     expect(game.getEnemyMaxHp("boss", 20)).toBe(20930);
     expect(game.getEnemyMaxHp("grunt", 20)).toBe(141);
-    expect(game.getEnemyHealthScale("boss", 40)).toBeCloseTo(6.43, 8);
+    expect(game.getEnemyHealthScale("boss", 40)).toBeCloseTo(7.03, 8);
+    expect(game.getEnemyHealthScale("grunt", 50)).toBeGreaterThan(
+      game.getEnemyHealthScale("grunt", 40) * 1.3,
+    );
   });
 
   it("makes a straight sniper stronger than a one-pair rifle against one target", () => {
