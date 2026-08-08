@@ -153,6 +153,37 @@ describe("poker defense loop", () => {
     expect(game.enemies).toHaveLength(1);
   });
 
+  it("spawns continuously by phase-time progress and empties the queue by 30 seconds", () => {
+    const game = new GameEngine();
+    game.phase = 4;
+    game.state = "running";
+    game.queue = Array.from({ length: 30 }, () => ({
+      kind: "juggernaut" as const,
+      group: "PHASE 4",
+    }));
+    game.phaseTotal = game.queue.length;
+    game.phaseSpawned = 0;
+
+    game.update(10);
+    expect(game.phaseSpawned).toBe(10);
+    expect(game.queue).toHaveLength(20);
+    expect(game.state).toBe("running");
+
+    game.update(10);
+    expect(game.phaseSpawned).toBe(20);
+    expect(game.queue).toHaveLength(10);
+
+    game.update(9);
+    expect(game.phaseSpawned).toBe(29);
+    expect(game.queue).toHaveLength(1);
+    expect(game.state).toBe("running");
+
+    game.update(1);
+    expect(game.phaseSpawned).toBe(30);
+    expect(game.queue).toHaveLength(0);
+    expect(game.state).toBe("poker");
+  });
+
   it("pauses surviving enemies during poker and deploy intermissions", () => {
     const game = new GameEngine();
     skipDeployment(game);

@@ -1140,7 +1140,7 @@ export class GameEngine {
     this.state = "running";
     this.placing = null;
     this.lastSpawnedGroup = `PHASE ${this.phase}`;
-    this.setMessage(`PHASE ${this.phase} 시작 — ${this.phaseTotal}기 투입`, 4);
+    this.setMessage(`PHASE ${this.phase} · 30초 전투 시작`, 4);
     this.pushAudio("boss");
     this.emit(true);
   }
@@ -1339,13 +1339,18 @@ export class GameEngine {
     this.elapsed += dt;
     this.phaseElapsed += dt;
     if (this.message && this.elapsed >= this.messageUntil) this.message = "";
-    this.spawnClock += dt;
-    const spawnInterval = Math.min(
-      1.5,
-      (PHASE_COMBAT_SECONDS - 3) / Math.max(1, this.phaseTotal),
+    // Derive spawn progress from phase time instead of accumulating an
+    // interval. This guarantees mobile frame drops cannot leave queued units
+    // behind when the 30-second combat window ends.
+    const scheduledSpawned = Math.min(
+      this.phaseTotal,
+      Math.ceil(
+        (Math.min(this.phaseElapsed, PHASE_COMBAT_SECONDS) /
+          PHASE_COMBAT_SECONDS) *
+          this.phaseTotal,
+      ),
     );
-    while (this.queue.length && this.spawnClock >= spawnInterval) {
-      this.spawnClock -= spawnInterval;
+    while (this.queue.length && this.phaseSpawned < scheduledSpawned) {
       this.spawnEnemy();
     }
     if (
