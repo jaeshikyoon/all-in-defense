@@ -150,11 +150,30 @@ export type Snapshot = {
 };
 
 export const PHASE_COMBAT_SECONDS = 30;
-export const PHASE_SPAWN_INTERVAL_SECONDS = 0.75;
-export const PHASE_SPAWN_BURST_SIZE = 3;
-export const PHASE_ENEMY_COUNT = Math.floor(
-  PHASE_COMBAT_SECONDS / PHASE_SPAWN_INTERVAL_SECONDS,
-) * PHASE_SPAWN_BURST_SIZE;
+export const PHASE_SPAWN_GROUP_SIZE = 12;
+export const PHASE_FIRST_SPAWN_DELAY_SECONDS = 0.15;
+export const PHASE_GROUP_MEMBER_INTERVAL_SECONDS = 0.22;
+export const PHASE_GROUP_REST_SECONDS = 3;
+export const PHASE_GROUP_INTERVAL_SECONDS =
+  (PHASE_SPAWN_GROUP_SIZE - 1) * PHASE_GROUP_MEMBER_INTERVAL_SECONDS +
+  PHASE_GROUP_REST_SECONDS;
+export const getPhaseSpawnCountAt = (elapsed: number) => {
+  const time = Math.max(0, Math.min(PHASE_COMBAT_SECONDS, elapsed));
+  if (time < PHASE_FIRST_SPAWN_DELAY_SECONDS) return 0;
+  const sinceFirst = time - PHASE_FIRST_SPAWN_DELAY_SECONDS,
+    completedGroups = Math.floor(sinceFirst / PHASE_GROUP_INTERVAL_SECONDS),
+    currentGroupTime =
+      sinceFirst - completedGroups * PHASE_GROUP_INTERVAL_SECONDS,
+    currentGroupCount = Math.min(
+      PHASE_SPAWN_GROUP_SIZE,
+      Math.floor(
+        (currentGroupTime + Number.EPSILON) /
+          PHASE_GROUP_MEMBER_INTERVAL_SECONDS,
+      ) + 1,
+    );
+  return completedGroups * PHASE_SPAWN_GROUP_SIZE + currentGroupCount;
+};
+export const PHASE_ENEMY_COUNT = getPhaseSpawnCountAt(PHASE_COMBAT_SECONDS);
 
 const tierRange = [1, 1, 1.05, 1.1, 1.15];
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
@@ -1092,9 +1111,9 @@ export class GameEngine {
       add("warden", Math.min(Math.floor((phase - 7) / 3), 4), out);
     if (phase % 10 === 0) add("boss", 1 + Math.floor(phase / 30), out);
 
-    // Every phase fills the same 30-second combat window with three-enemy
-    // lane bursts. Difficulty grows through the stronger mix and existing HP
-    // scaling, not by stretching sparse single spawns over the whole window.
+    // Every phase uses visible enemy groups: twelve quick sequential spawns
+    // followed by a three-second rest. Difficulty grows through the stronger
+    // mix and existing HP scaling rather than an increasing spawn rate.
     const phaseLimit = PHASE_ENEMY_COUNT;
     const bosses = out.filter((entry) => entry.kind === "boss"),
       regular = out.filter((entry) => entry.kind !== "boss"),
@@ -1350,15 +1369,12 @@ export class GameEngine {
     this.elapsed += dt;
     this.phaseElapsed += dt;
     if (this.message && this.elapsed >= this.messageUntil) this.message = "";
-    // Fill all three visual lanes on every beat instead of releasing isolated
-    // enemies. Deriving the burst count from elapsed time also catches up
-    // safely after a slow mobile frame.
+    // Release a twelve-enemy group in quick succession, then leave a visible
+    // rest. Deriving the count from elapsed time catches up after a slow mobile
+    // frame without collapsing the normal rhythm into simultaneous spawns.
     const scheduledSpawned = Math.min(
       this.phaseTotal,
-      Math.floor(
-        Math.min(this.phaseElapsed, PHASE_COMBAT_SECONDS) /
-          PHASE_SPAWN_INTERVAL_SECONDS,
-      ) * PHASE_SPAWN_BURST_SIZE,
+      getPhaseSpawnCountAt(this.phaseElapsed),
     );
     while (this.queue.length && this.phaseSpawned < scheduledSpawned) {
       this.spawnEnemy();
