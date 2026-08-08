@@ -1021,12 +1021,10 @@ export class GameEngine {
       y < 1 ||
       x >= this.mapWidth ||
       y >= this.mapHeight ||
-      this.assetFootprintCells(x, y, kind).some((cell) =>
-        (() => {
-          const occupant = this.assetCells.get(this.cellKey(cell.x, cell.y));
-          return Boolean(occupant && occupant.id !== ignoredAssetId);
-        })(),
-      )
+      this.assetFootprintCells(x, y, kind).some((cell) => {
+        const occupant = this.assetCells.get(this.cellKey(cell.x, cell.y));
+        return Boolean(occupant && occupant.id !== ignoredAssetId);
+      })
     )
       return false;
     if (
@@ -1042,8 +1040,24 @@ export class GameEngine {
     return true;
   }
   nearestValidBuildCell(x: number, y: number, kind: MapAssetKind) {
-    const base = this.snapAssetPoint(x, y, kind);
-    return this.validBuildCell(base.x, base.y, kind) ? base : null;
+    const base = this.snapAssetPoint(x, y, kind),
+      spec = BUILDINGS[kind];
+    if (spec.category === "floor")
+      return this.validBuildCell(base.x, base.y, kind) ? base : null;
+    const clickedCellX = Math.max(
+        0,
+        Math.min(this.mapWidth - 2, Math.floor(x / 2) * 2),
+      ),
+      clickedCellY = Math.max(
+        0,
+        Math.min(this.mapHeight - 2, Math.floor(y / 2) * 2),
+      ),
+      replacedAsset = this.assetCells.get(
+        this.cellKey(clickedCellX, clickedCellY),
+      );
+    return this.validBuildCell(base.x, base.y, kind, replacedAsset?.id)
+      ? base
+      : null;
   }
   mapObjectAt(x: number, y: number) {
     const floorX = Math.max(

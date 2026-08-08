@@ -795,6 +795,23 @@ describe("map builder invariants", () => {
     expect(game.mapObjects.filter((object) => object.id === placed.id)).toHaveLength(1);
   });
 
+  it("keeps floor material below structures and terrain without blocking them", () => {
+    const game = new GameEngine();
+    game.enterBuilder();
+    game.fillFloor("floor_steel");
+
+    game.chooseBuildTool("grass_patch");
+    game.clickWorld(26, 12);
+    expect(game.floorCells.get("26:12")?.kind).toBe("floor_steel");
+    expect(game.assetCells.get("26:12")?.kind).toBe("grass_patch");
+
+    game.chooseBuildTool("lamp_post");
+    expect(game.nearestValidBuildCell(26, 12, "lamp_post")).not.toBeNull();
+    game.clickWorld(26, 12);
+    expect(game.floorCells.get("26:12")?.kind).toBe("floor_steel");
+    expect(game.assetCells.get("26:12")?.kind).toBe("lamp_post");
+  });
+
   it("snaps multi-cell buildings to grid footprints and reserves every cell", () => {
     const game = new GameEngine();
     game.enterBuilder();
