@@ -1114,6 +1114,41 @@ export class GameEngine {
       this.emit(true);
       return;
     }
+    if (BUILDINGS[kind].category === "terrain") {
+      const targetCells = this.assetFootprintCells(target.x, target.y, kind),
+        occupants = [
+          ...new Map(
+            targetCells
+              .map((cell) => this.assetCells.get(this.cellKey(cell.x, cell.y)))
+              .filter((object): object is MapObject => Boolean(object))
+              .map((object) => [object.id, object]),
+          ).values(),
+        ];
+      if (
+        occupants.length === 1 &&
+        BUILDINGS[occupants[0].kind].category === "terrain"
+      ) {
+        const existing = occupants[0];
+        if (existing.kind === kind && existing.x === target.x && existing.y === target.y)
+          return;
+        for (const cell of this.assetFootprintCells(
+          existing.x,
+          existing.y,
+          existing.kind,
+        ))
+          this.assetCells.delete(this.cellKey(cell.x, cell.y));
+        existing.kind = kind;
+        existing.x = target.x;
+        existing.y = target.y;
+        for (const cell of targetCells)
+          this.assetCells.set(this.cellKey(cell.x, cell.y), existing);
+        this.mapDirty = true;
+        this.markMapChanged(existing);
+        this.pushAudio("buy");
+        this.emit(true);
+        return;
+      }
+    }
     if (this.validBuildCell(target.x, target.y, kind)) {
       const object = { id: this.nextMapId++, kind, x: target.x, y: target.y };
       this.mapObjects.push(object);

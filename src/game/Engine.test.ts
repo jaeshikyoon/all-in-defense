@@ -750,7 +750,7 @@ describe("map builder invariants", () => {
     expect(game.mapObjects.length).toBe(before);
   });
 
-  it("allows one floor and one asset per tile without stacking", () => {
+  it("allows one floor and one asset per tile and replaces terrain in place", () => {
     const game = new GameEngine();
     game.enterBuilder();
     const floorCount = game.floorCells.size;
@@ -769,8 +769,23 @@ describe("map builder invariants", () => {
       placed.kind,
     );
     expect(game.assetCells.get(`${occupiedCell.x}:${occupiedCell.y}`)?.kind).toBe(
-      "grass_patch",
+      "dirt_mound",
     );
+    expect(game.mapObjects.filter((object) => object.id === placed.id)).toHaveLength(1);
+  });
+
+  it("does not replace a structure when painting terrain over it", () => {
+    const game = new GameEngine();
+    game.enterBuilder();
+    game.chooseBuildTool("lamp_post");
+    game.clickWorld(26, 12);
+    const placed = game.mapObjects.at(-1)!;
+
+    game.chooseBuildTool("grass_patch");
+    game.clickWorld(26, 12);
+
+    expect(game.mapById.get(placed.id)?.kind).toBe("lamp_post");
+    expect(game.mapObjects.filter((object) => object.id === placed.id)).toHaveLength(1);
   });
 
   it("snaps multi-cell buildings to grid footprints and reserves every cell", () => {
