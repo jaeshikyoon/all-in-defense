@@ -186,6 +186,30 @@ const formatPlayTime = (seconds: number) => {
     : `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
 };
 
+async function enterMobileLandscape(root: HTMLElement | null) {
+  const isTouchDevice = navigator.maxTouchPoints > 0 ||
+    window.matchMedia("(pointer: coarse)").matches;
+  if (!isTouchDevice) return true;
+
+  try {
+    if (!document.fullscreenElement && root?.requestFullscreen) {
+      await root.requestFullscreen({ navigationUI: "hide" });
+    }
+  } catch {
+    // iOS and embedded browsers may reject fullscreen. Orientation lock can
+    // still work for an installed PWA, so continue with the lock attempt.
+  }
+
+  try {
+    await screen.orientation?.lock?.("landscape");
+  } catch {
+    // An ordinary browser tab is allowed to reject orientation locking.
+    // The portrait fallback remains visible in that case.
+  }
+
+  return window.matchMedia("(orientation: landscape)").matches;
+}
+
 function Minimap({ snap }: { snap: Snapshot }) {
   const battlePhase = visibleBattlePhase(snap),
     openCount = snap.routeStartPhases.filter(
@@ -1182,7 +1206,8 @@ function BuilderMapTools({
 }
 
 export function App() {
-  const host = useRef<HTMLDivElement>(null),
+  const shell = useRef<HTMLElement>(null),
+    host = useRef<HTMLDivElement>(null),
     [snap, setSnap] = useState(() => engine.getSnapshot()),
     [showEnemyGuide, setShowEnemyGuide] = useState(false),
     [showRanking, setShowRanking] = useState(false),
@@ -1387,7 +1412,7 @@ export function App() {
             ? "B"
             : "C";
   return (
-    <main className="game-shell">
+    <main className="game-shell" ref={shell}>
       <div className="board" ref={host} />
       <div className="grain" />
       {snap.state === "ready" && (
@@ -1641,7 +1666,7 @@ export function App() {
           <div className="intro-card">
             <img
               className="main-game-logo"
-              src={publicAssetUrl("assets/ui/all-in-defense-logo-transparent-v3.png")}
+              src={publicAssetUrl("assets/ui/all-in-defense-logo-transparent-v3.webp")}
               alt="ALL-IN DEFENSE"
             />
             <MapLibrary
@@ -1656,7 +1681,10 @@ export function App() {
               <button
                 className="home-image-action home-play"
                 disabled={!storageReady}
-                onClick={() => engine.start()}
+                onClick={async () => {
+                  await enterMobileLandscape(shell.current);
+                  engine.start();
+                }}
               >
                 <img src={publicAssetUrl("assets/ui/menu-play.jpg")} alt="" />
                 <span>게임 시작</span>
@@ -1722,8 +1750,16 @@ export function App() {
         </div>
       )}
       <div className="rotate">
-        <b>기기를 가로로 돌려주세요</b>
-        <span>ALL-IN DEFENSE는 가로 화면 전용입니다.</span>
+        <b>가로 화면으로 시작</b>
+        <span>버튼을 누르면 전체 화면과 가로 모드를 적용합니다.</span>
+        <GameButton
+          variant="primary"
+          className="landscape-start"
+          onClick={() => void enterMobileLandscape(shell.current)}
+        >
+          게임 화면 열기
+        </GameButton>
+        <small>전환되지 않으면 기기를 가로로 돌려주세요.</small>
       </div>
     </main>
   );

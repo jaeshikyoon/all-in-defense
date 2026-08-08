@@ -589,7 +589,7 @@ button {
   background:
     radial-gradient(ellipse at center, rgba(3, 13, 21, 0.18), rgba(2, 8, 14, 0.08) 44%, rgba(1, 5, 9, 0.36)),
     linear-gradient(90deg, rgba(1, 7, 12, 0.1), transparent 25% 75%, rgba(1, 5, 9, 0.12)),
-    url("/assets/backgrounds/main-menu-battlefield.png") center / cover no-repeat;
+    url("/assets/backgrounds/main-menu-battlefield.webp") center / cover no-repeat;
   backdrop-filter: none;
 }
 .intro-card {
@@ -1299,6 +1299,9 @@ button {
 }
 @media (orientation: portrait) {
   .rotate {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100vw;
     position: absolute;
     z-index: 50;
     inset: 0;
@@ -2200,7 +2203,7 @@ button {
   border-radius: 9px;
   background:
     linear-gradient(rgba(3, 12, 19, 0.2), rgba(3, 12, 19, 0.34)),
-    url("/assets/ui/operations-panel-header.png") center / cover no-repeat;
+    url("/assets/ui/operations-panel-header.webp") center / cover no-repeat;
   text-align: center;
 }
 .ranking-modal h2 {
@@ -2310,7 +2313,7 @@ button {
   border-radius: 9px;
   background:
     linear-gradient(rgba(3, 12, 19, 0.22), rgba(3, 12, 19, 0.36)),
-    url("/assets/ui/operations-panel-header.png") center / cover no-repeat;
+    url("/assets/ui/operations-panel-header.webp") center / cover no-repeat;
   text-align: center;
 }
 .enemy-guide > header h2 {
@@ -3274,7 +3277,7 @@ em {
   z-index: 0;
   inset: -18px;
   border: 30px solid transparent;
-  border-image-source: url("/assets/ui/modal-frame-9slice-transparent-v2.png");
+  border-image-source: url("/assets/ui/modal-frame-9slice-transparent-v2.webp");
   border-image-slice: 140;
   border-image-width: 30px;
   border-image-repeat: round;
@@ -3873,4 +3876,388 @@ button.close.game-button-icon,
     height: 46px;
   }
   .volume-popover { width: 218px; }
+}
+
+/* Mobile play layout -------------------------------------------------------
+   Keep the battlefield and combat feedback intact. These rules reorganize
+   controls instead of globally scaling the game or removing visual effects. */
+@media (max-width: 900px) and (orientation: landscape),
+       (max-height: 500px) and (orientation: landscape) {
+  :root {
+    --mobile-hud-height: 58px;
+    --mobile-touch: 44px;
+  }
+
+  html,
+  body,
+  #root,
+  .game-shell {
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    overscroll-behavior: none;
+  }
+
+  button,
+  input[type="range"] {
+    touch-action: manipulation;
+  }
+
+  .intro.modal-back {
+    display: block;
+    padding:
+      max(6px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right))
+      max(6px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .intro-card {
+    width: min(860px, 100%);
+    max-height: none;
+    min-height: calc(100dvh - 12px);
+    margin: 0 auto;
+    padding: 7px 10px 9px;
+    overflow: visible;
+  }
+
+  .main-game-logo {
+    width: min(720px, 86%);
+    height: clamp(58px, 19dvh, 90px);
+    margin: -2px auto 3px;
+    object-fit: contain;
+  }
+
+  .intro-card .map-library {
+    margin: 0;
+    padding: 7px 8px;
+  }
+
+  .map-library-heading {
+    margin-bottom: 5px;
+  }
+
+  .map-library-heading span {
+    display: none;
+  }
+
+  .map-library-heading b {
+    font-size: 14px;
+  }
+
+  .map-preview {
+    height: 42px;
+  }
+
+  .map-card {
+    flex-basis: 142px;
+    min-width: 142px;
+    padding: 4px;
+    scroll-snap-align: center;
+  }
+
+  .map-card-row {
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .map-card > span {
+    padding: 4px 2px 1px;
+  }
+
+  .home-image-actions {
+    grid-template-columns: 1.35fr 1fr 1fr;
+    gap: 7px;
+    margin-top: 7px;
+  }
+
+  .home-image-action {
+    min-height: clamp(58px, 18dvh, 82px);
+    border-radius: 7px;
+  }
+
+  .home-image-action span {
+    left: 9px;
+    right: 9px;
+    bottom: 7px;
+    font-size: 13px;
+  }
+
+  .ready-tools {
+    top: max(7px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+    height: var(--mobile-touch);
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .game-shell > .top-hud {
+    left: max(6px, env(safe-area-inset-left));
+    right: max(6px, env(safe-area-inset-right));
+    top: max(5px, env(safe-area-inset-top));
+    height: var(--mobile-hud-height);
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: 4px;
+    padding: 4px 5px;
+    border-radius: 8px;
+  }
+
+  .game-shell > .top-hud .brand {
+    width: 40px;
+    min-width: 40px;
+  }
+
+  .game-shell > .top-hud .brand-mark {
+    width: 38px;
+    height: 44px;
+  }
+
+  .game-shell > .top-hud .brand div,
+  .game-shell > .top-hud .spawn-stat,
+  .game-shell > .top-hud .active-stat {
+    display: none;
+  }
+
+  .game-shell > .top-hud .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(58px, 1fr));
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .game-shell > .top-hud .metrics > div {
+    min-width: 0;
+    height: 48px;
+    padding: 3px 2px;
+  }
+
+  .game-shell > .top-hud .metrics span {
+    overflow: hidden;
+    font-size: 10px;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .game-shell > .top-hud .metrics b {
+    font-size: 16px;
+  }
+
+  .game-shell > .top-hud .metrics small {
+    font-size: 10px;
+  }
+
+  .hud-actions {
+    height: 48px;
+    gap: 3px;
+  }
+
+  .hud-actions > button,
+  .hud-actions > .sound-control,
+  .hud-actions .sound {
+    width: var(--mobile-touch);
+    min-width: var(--mobile-touch);
+    height: var(--mobile-touch);
+  }
+
+  .hud-actions > button > b,
+  .hud-actions > .sound-control > .sound b {
+    display: none;
+  }
+
+  .right-stack {
+    top: calc(var(--mobile-hud-height) + max(10px, env(safe-area-inset-top)));
+    right: max(6px, env(safe-area-inset-right));
+    width: 146px;
+    gap: 5px;
+  }
+
+  .right-stack .minimap {
+    height: 72px;
+  }
+
+  .right-stack .minimap svg {
+    height: 45px;
+  }
+
+  .right-stack .mission {
+    display: none;
+  }
+
+  .selection {
+    left: max(6px, env(safe-area-inset-left));
+    right: auto;
+    bottom: max(6px, env(safe-area-inset-bottom));
+    width: min(430px, calc(100vw - 170px));
+    min-width: 0;
+    height: 58px;
+    transform: none;
+  }
+
+  .phase-ready {
+    bottom: max(7px, env(safe-area-inset-bottom));
+    gap: 8px;
+    max-width: calc(100vw - 20px);
+    padding: 6px 8px;
+  }
+
+  .phase-ready > span {
+    display: none;
+  }
+
+  .phase-ready .phase-start-cta {
+    min-width: 190px;
+    height: 48px;
+  }
+
+  .zoom-controls {
+    right: max(7px, env(safe-area-inset-right));
+    bottom: max(7px, env(safe-area-inset-bottom));
+    min-height: var(--mobile-touch);
+  }
+
+  .zoom-controls button {
+    min-width: var(--mobile-touch);
+    min-height: var(--mobile-touch);
+  }
+
+  .modal-back:not(.intro) {
+    padding:
+      max(7px, env(safe-area-inset-top))
+      max(9px, env(safe-area-inset-right))
+      max(7px, env(safe-area-inset-bottom))
+      max(9px, env(safe-area-inset-left));
+  }
+
+  .poker-modal,
+  .enemy-guide,
+  .ranking-modal,
+  .end-card {
+    width: min(880px, 100%);
+    max-height: calc(100dvh - 14px);
+    padding: 10px 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .poker-modal h2 {
+    margin: 1px 0;
+    font-size: 22px;
+  }
+
+  .poker-copy {
+    margin: 2px auto 6px;
+  }
+
+  .poker-hand {
+    width: min(540px, 74vw);
+    gap: 7px;
+  }
+
+  .poker-hand button {
+    border-width: 3px;
+    border-radius: 9px;
+  }
+
+  .poker-hand button b {
+    left: 6px;
+    top: 4px;
+    font-size: 18px;
+  }
+
+  .poker-hand button span {
+    font-size: clamp(28px, 8dvh, 40px);
+  }
+
+  .poker-action {
+    min-width: 240px;
+    min-height: var(--mobile-touch);
+    margin-top: 7px;
+  }
+
+  .poker-ladder,
+  .poker-odds,
+  .poker-guide-toggle {
+    margin-top: 5px;
+  }
+
+  .volume-popover {
+    position: fixed;
+    top: auto;
+    right: max(9px, env(safe-area-inset-right));
+    bottom: max(9px, env(safe-area-inset-bottom));
+    width: min(280px, calc(100vw - 18px));
+  }
+}
+
+@media (max-width: 700px) and (orientation: landscape) {
+  .right-stack .minimap,
+  .right-stack .mission {
+    display: none;
+  }
+
+  .right-stack {
+    width: 132px;
+  }
+
+  .selection {
+    width: min(390px, calc(100vw - 146px));
+  }
+
+  .main-game-logo {
+    height: 58px;
+  }
+
+  .home-image-action {
+    min-height: 58px;
+  }
+}
+
+@media (orientation: portrait) {
+  .rotate {
+    padding:
+      max(24px, env(safe-area-inset-top))
+      max(22px, env(safe-area-inset-right))
+      max(24px, env(safe-area-inset-bottom))
+      max(22px, env(safe-area-inset-left));
+    text-align: center;
+  }
+
+  .rotate::before {
+    animation: rotate-device-hint 1.8s ease-in-out infinite;
+  }
+
+  .rotate b {
+    font-size: clamp(24px, 7vw, 34px);
+  }
+
+  .rotate span {
+    width: 100%;
+    max-width: 330px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .rotate .landscape-start {
+    box-sizing: border-box;
+    width: min(300px, 86vw);
+    min-height: 52px;
+    margin-top: 12px;
+    font-size: 16px;
+  }
+
+  .rotate small {
+    margin-top: 3px;
+    color: #8ca3ad;
+    font-size: 12px;
+  }
+}
+
+@keyframes rotate-device-hint {
+  0%, 100% { transform: rotate(0deg); }
+  45%, 65% { transform: rotate(90deg); }
 }

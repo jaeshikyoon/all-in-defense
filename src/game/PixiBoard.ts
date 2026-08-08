@@ -396,10 +396,10 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
     spawnCaveTexture,
     defenseCoreTexture,
   ] = await Promise.all([
-    Assets.load(publicAssetUrl("assets/backgrounds/border-wall.png")),
-    Assets.load(publicAssetUrl("assets/backgrounds/border-bastion.png")),
-    Assets.load(publicAssetUrl("assets/routes/spawn-cave.png")),
-    Assets.load(publicAssetUrl("assets/routes/defense-core.png")),
+    Assets.load(publicAssetUrl("assets/backgrounds/border-wall.webp")),
+    Assets.load(publicAssetUrl("assets/backgrounds/border-bastion.webp")),
+    Assets.load(publicAssetUrl("assets/routes/spawn-cave.webp")),
+    Assets.load(publicAssetUrl("assets/routes/defense-core.webp")),
   ]);
   const world = new Container();
   app.stage.addChild(world);
@@ -495,6 +495,10 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
     } | null = null,
     hover: { x: number; y: number } | null = null,
     dragEnd: { x: number; y: number } | null = null;
+  const activePointers = new Map<number, { x: number; y: number }>();
+  let pinching = false,
+    lastPinchDistance = 0,
+    lastPinchCenter = { x: 0, y: 0 };
   let lastAudioId = 0;
   const toGrid = (cx: number, cy: number) => {
     const sx = (cx - world.x) / world.scale.x,
@@ -795,6 +799,17 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
   window.addEventListener("game-camera-zoom", onZoomCommand);
   app.canvas.addEventListener("pointerdown", (e) => {
     app.canvas.setPointerCapture(e.pointerId);
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (activePointers.size >= 2) {
+      const [a, b] = [...activePointers.values()];
+      pinching = true;
+      lastPinchDistance = Math.hypot(b.x - a.x, b.y - a.y);
+      lastPinchCenter = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      down = null;
+      dragEnd = null;
+      overlay.clear();
+      return;
+    }
     if (e.button === 0 && engine.state === "builder") engine.beginPaintStroke();
     down = {
       x: e.clientX,
@@ -807,6 +822,23 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
   });
   app.canvas.addEventListener("pointermove", (e) => {
     const r = app.canvas.getBoundingClientRect();
+    if (activePointers.has(e.pointerId))
+      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (activePointers.size >= 2) {
+      const [a, b] = [...activePointers.values()],
+        distance = Math.hypot(b.x - a.x, b.y - a.y),
+        center = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+        localX = center.x - r.left,
+        localY = center.y - r.top;
+      if (lastPinchDistance > 0)
+        zoomAt(distance / lastPinchDistance, localX, localY);
+      world.x += center.x - lastPinchCenter.x;
+      world.y += center.y - lastPinchCenter.y;
+      lastPinchDistance = distance;
+      lastPinchCenter = center;
+      hover = null;
+      return;
+    }
     hover = toGrid(e.clientX - r.left, e.clientY - r.top);
     if (down) {
       dragEnd = { x: e.clientX, y: e.clientY };
@@ -827,6 +859,18 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
     hover = null;
   });
   app.canvas.addEventListener("pointerup", (e) => {
+    activePointers.delete(e.pointerId);
+    if (pinching) {
+      if (activePointers.size < 2) {
+        pinching = false;
+        lastPinchDistance = 0;
+        engine.endPaintStroke();
+      }
+      down = null;
+      dragEnd = null;
+      overlay.clear();
+      return;
+    }
     if (!down) return;
     const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y),
       r = app.canvas.getBoundingClientRect();
@@ -856,6 +900,15 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
     engine.endPaintStroke();
     down = null;
     dragEnd = null;
+    overlay.clear();
+  });
+  app.canvas.addEventListener("pointercancel", (e) => {
+    activePointers.delete(e.pointerId);
+    pinching = false;
+    lastPinchDistance = 0;
+    down = null;
+    dragEnd = null;
+    engine.endPaintStroke();
     overlay.clear();
   });
   const render = () => {
