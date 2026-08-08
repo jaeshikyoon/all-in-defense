@@ -166,6 +166,27 @@ describe("poker defense loop", () => {
     expect(game.phasePlan(20).at(-1)?.kind).toBe("boss");
   });
 
+  it("caps endless phase duration while shifting the plan toward stronger enemies", () => {
+    const game = new GameEngine(),
+      phase2 = game.phasePlan(2),
+      phase10 = game.phasePlan(10),
+      phase30 = game.phasePlan(30),
+      phase100 = game.phasePlan(100);
+
+    expect(phase2.length).toBeLessThanOrEqual(20);
+    expect(phase10).toHaveLength(28);
+    expect(phase30).toHaveLength(34);
+    expect(phase100).toHaveLength(34);
+    expect(phase10.at(-1)?.kind).toBe("boss");
+    expect(phase30.filter((enemy) => enemy.kind === "boss")).toHaveLength(2);
+    expect(phase100.length * 0.55).toBeLessThan(19);
+    expect(
+      phase30.filter((enemy) =>
+        ["elite", "juggernaut", "warden", "boss"].includes(enemy.kind),
+      ).length,
+    ).toBeGreaterThan(5);
+  });
+
   it("continues to another poker draw after a boss phase instead of winning", () => {
     const game = new GameEngine();
     game.phase = 10;

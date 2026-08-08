@@ -4906,4 +4906,12 @@ button.close.game-button-icon,
   .wheel-button small {
     display: none;
   }
+
+  .game-shell > .top-hud .spawn-stat {
+    display: flex !important;
+  }
+
+  .game-shell > .top-hud .metrics {
+    grid-template-columns: repeat(5, minmax(48px, 1fr));
+  }
 }

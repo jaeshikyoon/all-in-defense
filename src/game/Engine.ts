@@ -1081,7 +1081,45 @@ export class GameEngine {
     if (phase >= 9)
       add("warden", Math.min(Math.floor((phase - 7) / 3), 4), out);
     if (phase % 10 === 0) add("boss", 1 + Math.floor(phase / 30), out);
-    return out;
+
+    // Keep endless phases brisk. Difficulty grows through the stronger mix
+    // and the existing HP scale, not through an endlessly growing queue.
+    const phaseLimit = 18 + Math.min(Math.max(0, phase), 16);
+    if (out.length <= phaseLimit) return out;
+
+    const bosses = out.filter((entry) => entry.kind === "boss"),
+      regular = out.filter((entry) => entry.kind !== "boss"),
+      regularSlots = Math.max(0, phaseLimit - bosses.length),
+      selectedIndices: number[] = [];
+    let cursor = -1;
+    for (let i = 0; i < regularSlots; i++) {
+      const progress = regularSlots <= 1 ? 1 : i / (regularSlots - 1),
+        desired = Math.round(Math.pow(progress, 0.72) * (regular.length - 1)),
+        minIndex = cursor + 1,
+        maxIndex = regular.length - (regularSlots - i),
+        index = Math.max(minIndex, Math.min(maxIndex, desired));
+      selectedIndices.push(index);
+      cursor = index;
+    }
+    const includedKinds = new Set(
+      selectedIndices.map((index) => regular[index].kind),
+    );
+    for (const kind of new Set(regular.map((entry) => entry.kind))) {
+      if (includedKinds.has(kind)) continue;
+      let requiredIndex = regular.length - 1;
+      while (requiredIndex > 0 && regular[requiredIndex].kind !== kind)
+        requiredIndex--;
+      const counts = new Map<EnemyKind, number>();
+      for (const index of selectedIndices)
+        counts.set(regular[index].kind, (counts.get(regular[index].kind) ?? 0) + 1);
+      const replaceAt = selectedIndices.findIndex(
+        (index) => (counts.get(regular[index].kind) ?? 0) > 1,
+      );
+      if (replaceAt >= 0) selectedIndices[replaceAt] = requiredIndex;
+      includedKinds.add(kind);
+    }
+    selectedIndices.sort((a, b) => a - b);
+    return [...selectedIndices.map((index) => regular[index]), ...bosses];
   }
   startPhase() {
     if (this.state !== "deploy" || this.pendingUnits.length) return;

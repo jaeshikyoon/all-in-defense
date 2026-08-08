@@ -1486,7 +1486,7 @@ export function App() {
               <b>{formatPlayTime(snap.elapsed)}</b>
             </div>
             <div className="spawn-stat">
-              <span>남은 투입</span>
+              <span>남은 병력</span>
               <b>
                 {snap.remaining}
                 <small> / {snap.phaseTotal || "-"}</small>
