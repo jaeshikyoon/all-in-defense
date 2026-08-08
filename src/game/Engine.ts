@@ -538,7 +538,8 @@ export class GameEngine {
           .map(([x, y]) => [Number(x), Number(y)] as [number, number]),
       )
       .filter((route) => route.length >= 2);
-    if (routes.length) this.routes = routes;
+    if (routes.length)
+      this.routes = routes.map((route) => this.normalizeRoutePoints(route));
     this.routeStartPhases = Array.isArray(map.routeStartPhases)
       ? map.routeStartPhases.map((phase) => Number(phase) || 1)
       : this.routes.map(() => 1);
@@ -696,12 +697,14 @@ export class GameEngine {
         o.x >= 0 && o.y >= 0 && o.x < this.mapWidth && o.y < this.mapHeight,
     );
     this.routes = this.routes.map((route) =>
-      route.map(
-        ([x, y]) =>
-          [
-            Math.max(1, Math.min(this.mapWidth - 1, x)),
-            Math.max(1, Math.min(this.mapHeight - 1, y)),
-          ] as [number, number],
+      this.normalizeRoutePoints(
+        route.map(
+          ([x, y]) =>
+            [
+              Math.max(1, Math.min(this.mapWidth - 1, x)),
+              Math.max(1, Math.min(this.mapHeight - 1, y)),
+            ] as [number, number],
+        ),
       ),
     );
     this.ensureFloorCoverage(currentFloor);
@@ -827,8 +830,25 @@ export class GameEngine {
       this.emit(true);
     }
   }
+  snapPathPoint(x: number, y: number): [number, number] {
+    return [
+      Math.max(1, Math.min(this.mapWidth - 1, Math.floor(x / 2) * 2 + 1)),
+      Math.max(1, Math.min(this.mapHeight - 1, Math.floor(y / 2) * 2 + 1)),
+    ];
+  }
+  normalizeRoutePoints(points: [number, number][]) {
+    const normalized: [number, number][] = [];
+    for (const [x, y] of points) {
+      const point = this.snapPathPoint(x, y),
+        previous = normalized.at(-1);
+      if (!previous || previous[0] !== point[0] || previous[1] !== point[1])
+        normalized.push(point);
+    }
+    return normalized;
+  }
   finishPathEdit() {
     if (!this.pathEditing) return;
+    this.pathPoints = this.normalizeRoutePoints(this.pathPoints);
     if (!this.pathPoints.length) {
       this.setMessage("이동 경로에는 입구 지점이 필요합니다");
       return;
@@ -869,6 +889,7 @@ export class GameEngine {
   }
   findPathSnap(x: number, y: number, maxDistance = 2.4) {
     if (!this.pathEditing || !this.pathPoints.length) return null;
+    const [cellX, cellY] = this.snapPathPoint(x, y);
     let best: {
       x: number;
       y: number;
@@ -892,20 +913,21 @@ export class GameEngine {
                   0,
                   Math.min(
                     1,
-                    ((x - a[0]) * dx + (y - a[1]) * dy) / lengthSquared,
+                    ((cellX - a[0]) * dx + (cellY - a[1]) * dy) /
+                      lengthSquared,
                   ),
                 )
               : 0,
           px = a[0] + dx * t,
           py = a[1] + dy * t,
-          snapDistance = Math.hypot(x - px, y - py);
+          snapDistance = Math.hypot(cellX - px, cellY - py);
         if (
           snapDistance <= maxDistance &&
           (!best || snapDistance < best.distance)
         )
           best = {
-            x: px,
-            y: py,
+            x: cellX,
+            y: cellY,
             routeIndex,
             segmentIndex,
             t,
@@ -921,7 +943,17 @@ export class GameEngine {
       last = this.pathPoints.at(-1);
     if (!last || distance({ x: last[0], y: last[1] }, { x: snap.x, y: snap.y }) > 0.05)
       this.pathPoints.push(junction);
-    for (const point of source.slice(snap.segmentIndex + 1)) {
+    const segmentStart = source[snap.segmentIndex],
+      segmentEnd = source[snap.segmentIndex + 1];
+    let tailIndex = snap.segmentIndex + 1;
+    if (
+      junction[0] !== segmentStart[0] ||
+      junction[1] !== segmentStart[1]
+    ) {
+      if (junction[0] !== segmentEnd[0] || junction[1] !== segmentEnd[1])
+        source.splice(tailIndex, 0, [junction[0], junction[1]]);
+    } else tailIndex = snap.segmentIndex;
+    for (const point of source.slice(tailIndex)) {
       const tail = this.pathPoints.at(-1)!;
       if (distance({ x: tail[0], y: tail[1] }, { x: point[0], y: point[1] }) > 0.05)
         this.pathPoints.push([point[0], point[1]]);
@@ -1903,13 +1935,7 @@ export class GameEngine {
   clickWorld(x: number, y: number) {
     if (this.state === "builder") {
       if (this.buildTool === "exit") {
-        const exit: [number, number] = [
-          Math.max(1, Math.min(this.mapWidth - 1, Math.floor(x / 2) * 2 + 1)),
-          Math.max(
-            1,
-            Math.min(this.mapHeight - 1, Math.floor(y / 2) * 2 + 1),
-          ),
-        ];
+        const exit = this.snapPathPoint(x, y);
         this.routes = this.routes.map((route) => [
           ...route.slice(0, -1),
           [exit[0], exit[1]],
@@ -1927,13 +1953,7 @@ export class GameEngine {
           this.connectPathToSnap(snap);
           return;
         }
-        const point: [number, number] = [
-            Math.max(1, Math.min(this.mapWidth - 1, Math.floor(x / 2) * 2 + 1)),
-            Math.max(
-              1,
-              Math.min(this.mapHeight - 1, Math.floor(y / 2) * 2 + 1),
-            ),
-          ],
+        const point = this.snapPathPoint(x, y),
           last = this.pathPoints.at(-1);
         if (!last || Math.hypot(point[0] - last[0], point[1] - last[1]) >= 2)
           this.pathPoints.push(point);

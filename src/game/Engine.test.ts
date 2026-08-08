@@ -846,11 +846,35 @@ describe("map builder invariants", () => {
     const game = new GameEngine();
     game.enterBuilder();
     game.beginPathEdit(false);
-    game.clickWorld(1, 1);
-    game.clickWorld(17, 11);
-    game.clickWorld(31, 27);
+    game.clickWorld(1.7, 1.2);
+    game.clickWorld(16.4, 10.8);
+    game.clickWorld(30.6, 26.3);
     game.finishPathEdit();
     expect(game.routes[0].at(-1)).toEqual([31, 27]);
+    expect(game.routes[0]).toEqual([
+      [1, 1],
+      [17, 11],
+      [31, 27],
+    ]);
+  });
+
+  it("normalizes imported route points to exact grid-cell centers", () => {
+    const game = new GameEngine();
+    game.applyMapData({
+      width: 52,
+      height: 46,
+      seed: 17,
+      objects: [],
+      routes: [[[2.2, 4.8], [20.4, 10.6], [49.8, 43.4]]],
+      routeStartPhases: [1],
+    });
+    expect(game.routes[0]).toEqual([
+      [3, 5],
+      [21, 11],
+      [49, 43],
+    ]);
+    expect(game.routes[0].every(([x, y]) => x % 2 === 1 && y % 2 === 1))
+      .toBe(true);
   });
 
   it("moves only the shared exit when the builder selects a new location", () => {

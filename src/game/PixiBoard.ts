@@ -1237,36 +1237,37 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
     if (
       snap.state === "builder" &&
       snap.pathEditing &&
-      snap.pathPoints.length &&
       hover
     ) {
-      const candidate = engine.findPathSnap(hover.x, hover.y);
-      if (candidate) {
-        const junction = project(candidate.x, candidate.y),
-          tail = snap.pathPoints.at(-1)!,
-          tailPoint = project(tail[0], tail[1]);
+      const [cellX, cellY] = engine.snapPathPoint(hover.x, hover.y),
+        cellCorner = project(cellX - 1, cellY - 1),
+        cellCenter = project(cellX, cellY),
+        candidate = engine.findPathSnap(cellX, cellY),
+        color = candidate ? 0x63ffd2 : 0x55dfff;
+      actors
+        .rect(cellCorner.x, cellCorner.y, 64, 64)
+        .fill({ color, alpha: 0.2 })
+        .stroke({ color, width: 4, alpha: 0.95 });
+      actors
+        .circle(cellCenter.x, cellCenter.y, candidate ? 10 : 7)
+        .fill({ color: candidate ? 0xffffff : color, alpha: 0.95 });
+      const tail = snap.pathPoints.at(-1);
+      if (tail) {
+        const tailPoint = project(tail[0], tail[1]);
         path
           .moveTo(tailPoint.x, tailPoint.y)
-          .lineTo(junction.x, junction.y)
-          .stroke({ color: 0x63ffd2, width: 6, alpha: 0.8 });
-        actors
-          .circle(junction.x, junction.y, 18)
-          .fill({ color: 0x19cda2, alpha: 0.28 })
-          .stroke({ color: 0xb9ffe9, width: 3 });
-        actors.circle(junction.x, junction.y, 5).fill(0xffffff);
+          .lineTo(cellCenter.x, cellCenter.y)
+          .stroke({ color, width: candidate ? 7 : 5, alpha: 0.82 });
       }
     }
     if (snap.state === "builder" && snap.buildTool === "exit" && hover) {
-      const exitX = Math.max(
-          1,
-          Math.min(snap.mapWidth - 1, Math.floor(hover.x / 2) * 2 + 1),
-        ),
-        exitY = Math.max(
-          1,
-          Math.min(snap.mapHeight - 1, Math.floor(hover.y / 2) * 2 + 1),
-        ),
+      const [exitX, exitY] = engine.snapPathPoint(hover.x, hover.y),
+        exitCorner = project(exitX - 1, exitY - 1),
         exitPoint = project(exitX, exitY);
       actors
+        .rect(exitCorner.x, exitCorner.y, 64, 64)
+        .fill({ color: 0x36d7ff, alpha: 0.18 })
+        .stroke({ color: 0xb8f5ff, width: 4 })
         .circle(exitPoint.x, exitPoint.y, 24)
         .fill({ color: 0x36d7ff, alpha: 0.22 })
         .stroke({ color: 0xb8f5ff, width: 4 });
