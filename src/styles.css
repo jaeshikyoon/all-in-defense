@@ -5,6 +5,273 @@
   background: #071019;
   font-synthesis: none;
 }
+
+/* Mobile map builder: keep the canvas primary and expose one tool drawer at a time. */
+.builder-mobile-dock,
+.builder-path-bar {
+  display: none;
+}
+
+@media (max-width: 900px) and (orientation: landscape),
+       (max-height: 500px) and (orientation: landscape) {
+  .builder-shell .editor-header {
+    left: max(6px, env(safe-area-inset-left));
+    right: max(6px, env(safe-area-inset-right));
+    top: max(5px, env(safe-area-inset-top));
+    height: 42px;
+    padding: 0 8px 0 12px;
+    border-radius: 7px;
+  }
+
+  .builder-shell .editor-header b {
+    font-size: 16px;
+    letter-spacing: 1.4px;
+  }
+
+  .builder-shell .editor-header span {
+    display: none;
+  }
+
+  .builder-shell .editor-header button {
+    height: 34px;
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .builder-mobile-dock {
+    position: absolute;
+    z-index: 16;
+    left: 50%;
+    bottom: max(6px, env(safe-area-inset-bottom));
+    display: flex;
+    width: min(310px, calc(100vw - 128px));
+    height: 46px;
+    padding: 3px;
+    gap: 3px;
+    transform: translateX(-50%);
+    border-radius: 8px;
+  }
+
+  .builder-mobile-dock button {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid #315563;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #122c36, #091a23);
+    color: #c4d9df;
+  }
+
+  .builder-mobile-dock button.active {
+    border-color: #68e5d1;
+    background: linear-gradient(180deg, #1a4b4d, #103038);
+    color: #e5fff9;
+  }
+
+  .builder-mobile-dock span {
+    color: #70e6d2;
+    font-size: 17px;
+  }
+
+  .builder-mobile-dock b {
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .builder-shell .build-controls {
+    z-index: 15;
+    left: max(7px, env(safe-area-inset-left));
+    right: max(7px, env(safe-area-inset-right));
+    top: auto;
+    bottom: calc(max(6px, env(safe-area-inset-bottom)) + 52px);
+    width: auto;
+    display: block;
+    pointer-events: none;
+  }
+
+  .builder-shell .build-controls.mobile-closed,
+  .builder-shell .builder-map-tools.mobile-closed {
+    display: none;
+  }
+
+  .builder-shell .build-controls.mobile-open,
+  .builder-shell .builder-map-tools.mobile-open {
+    display: block;
+  }
+
+  .builder-shell .build-panel {
+    box-sizing: border-box;
+    width: 100%;
+    max-height: min(48dvh, calc(100dvh - 112px));
+    padding: 9px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    pointer-events: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .builder-shell .build-panel header {
+    margin-bottom: 6px;
+  }
+
+  .builder-shell .build-panel nav {
+    position: sticky;
+    z-index: 2;
+    top: -9px;
+    grid-template-columns: repeat(5, minmax(58px, 1fr));
+    gap: 4px;
+    margin: 0 0 7px;
+    padding: 5px 0;
+    background: #0a1b24f2;
+  }
+
+  .builder-shell .build-panel nav button {
+    height: 36px;
+    min-height: 36px;
+    font-size: 11px;
+  }
+
+  .builder-shell .quick-add-entrance {
+    min-height: 40px;
+    margin: 3px 0 7px;
+    padding: 6px 10px;
+  }
+
+  .builder-shell .quick-add-entrance small,
+  .builder-shell .build-panel > small {
+    display: none;
+  }
+
+  .builder-shell .build-panel > .asset-grid {
+    display: grid;
+    grid-template-columns: none;
+    grid-template-rows: 1fr;
+    grid-auto-flow: column;
+    grid-auto-columns: 112px;
+    gap: 6px;
+    padding-bottom: 3px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+  }
+
+  .builder-shell .build-panel > .asset-grid button {
+    width: 112px;
+    min-height: 92px;
+    scroll-snap-align: start;
+  }
+
+  .builder-shell .build-panel > .asset-grid img {
+    height: 62px;
+  }
+
+  .builder-shell .build-panel > .path-editor {
+    padding: 8px;
+  }
+
+  .builder-shell .path-editor p {
+    display: none;
+  }
+
+  .builder-shell .builder-map-tools {
+    box-sizing: border-box;
+    z-index: 15;
+    left: max(7px, env(safe-area-inset-left));
+    right: max(7px, env(safe-area-inset-right));
+    top: auto;
+    bottom: calc(max(6px, env(safe-area-inset-bottom)) + 52px);
+    width: auto;
+    max-height: min(48dvh, calc(100dvh - 112px));
+    padding: 10px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .builder-shell .builder-map-tools header {
+    margin-bottom: 6px;
+  }
+
+  .builder-shell .map-name-field {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+  }
+
+  .builder-shell .map-name-field input {
+    min-height: 38px;
+  }
+
+  .builder-shell .builder-file-actions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .builder-shell .builder-file-actions button,
+  .builder-shell .builder-file-actions .map-import-button {
+    min-height: 40px;
+    font-size: 11px;
+  }
+
+  .builder-path-bar {
+    position: absolute;
+    z-index: 15;
+    left: 50%;
+    bottom: calc(max(6px, env(safe-area-inset-bottom)) + 53px);
+    display: flex;
+    min-height: 42px;
+    padding: 4px;
+    align-items: center;
+    gap: 4px;
+    transform: translateX(-50%);
+    border-radius: 7px;
+  }
+
+  .builder-path-bar b {
+    padding: 0 8px;
+    color: #bfeee7;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .builder-path-bar button {
+    min-width: 64px;
+    min-height: 34px;
+    border: 1px solid #3a5d68;
+    border-radius: 5px;
+    background: #102832;
+    color: #d0e0e4;
+    font-size: 11px;
+  }
+
+  .builder-path-bar button.save {
+    border-color: #5ce4c7;
+    background: #176158;
+    color: #effffb;
+  }
+
+  .builder-path-bar button:disabled {
+    opacity: 0.38;
+  }
+
+  .builder-shell .zoom-controls {
+    right: max(7px, env(safe-area-inset-right));
+    bottom: calc(max(6px, env(safe-area-inset-bottom)) + 53px);
+  }
+
+  .builder-shell:has(.build-controls.mobile-open) .zoom-controls,
+  .builder-shell:has(.builder-map-tools.mobile-open) .zoom-controls,
+  .builder-shell:has(.build-controls.mobile-open) .builder-path-bar,
+  .builder-shell:has(.builder-map-tools.mobile-open) .builder-path-bar {
+    display: none;
+  }
+}
 * {
   box-sizing: border-box;
 }

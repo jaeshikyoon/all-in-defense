@@ -696,7 +696,15 @@ function LootBanner({ snap }: { snap: Snapshot }) {
   );
 }
 
-function BuildControls({ snap }: { snap: Snapshot }) {
+function BuildControls({
+  snap,
+  mobileOpen,
+  onMobileDismiss,
+}: {
+  snap: Snapshot;
+  mobileOpen: boolean;
+  onMobileDismiss: () => void;
+}) {
   const [tab, setTab] = useState<
       "structure" | "terrain" | "floor" | "path" | "map"
     >("structure"),
@@ -719,7 +727,10 @@ function BuildControls({ snap }: { snap: Snapshot }) {
           <button
             key={kind}
             className={snap.buildTool === kind ? "active" : ""}
-            onClick={() => engine.chooseBuildTool(kind)}
+            onClick={() => {
+              engine.chooseBuildTool(kind);
+              onMobileDismiss();
+            }}
           >
             <img src={publicAssetUrl(`assets/${folder}/${kind}.png`)} alt="" />
             <span>{item.name}</span>
@@ -729,7 +740,9 @@ function BuildControls({ snap }: { snap: Snapshot }) {
     </div>
   );
   return (
-    <div className="build-controls">
+    <div
+      className={`build-controls ${mobileOpen ? "mobile-open" : "mobile-closed"}`}
+    >
       <div className="build-panel panel">
         <header>
           <span>MAP BUILD</span>
@@ -776,6 +789,7 @@ function BuildControls({ snap }: { snap: Snapshot }) {
           onClick={() => {
             setTab("path");
             engine.beginPathEdit(true);
+            onMobileDismiss();
           }}
         >
           <span>＋ 입구 추가</span>
@@ -885,12 +899,20 @@ function BuildControls({ snap }: { snap: Snapshot }) {
               </>
             ) : (
               <div className="route-actions">
-                <button onClick={() => engine.beginPathEdit(false)}>
+                <button
+                  onClick={() => {
+                    engine.beginPathEdit(false);
+                    onMobileDismiss();
+                  }}
+                >
                   선택 입구 경로 다시 그리기
                 </button>
                 <button
                   className="move-exit"
-                  onClick={() => engine.beginExitMove()}
+                  onClick={() => {
+                    engine.beginExitMove();
+                    onMobileDismiss();
+                  }}
                 >
                   ◎ 출구 위치 변경
                 </button>
@@ -959,7 +981,10 @@ function BuildControls({ snap }: { snap: Snapshot }) {
           className={
             snap.buildTool === "erase" ? "demolish active" : "demolish"
           }
-          onClick={() => engine.chooseBuildTool("erase")}
+          onClick={() => {
+            engine.chooseBuildTool("erase");
+            onMobileDismiss();
+          }}
         >
           ✕ 개별 에셋 삭제 · 클릭 또는 드래그
         </button>
@@ -1170,6 +1195,7 @@ function MapLibrary({
 function BuilderMapTools({
   maps,
   current,
+  mobileOpen,
   onRename,
   onDuplicate,
   onDelete,
@@ -1178,6 +1204,7 @@ function BuilderMapTools({
 }: {
   maps: StoredMap[];
   current: StoredMap | null;
+  mobileOpen: boolean;
   onRename: (name: string) => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -1185,7 +1212,10 @@ function BuilderMapTools({
   onImport: (file: File) => void;
 }) {
   return (
-    <aside className="builder-map-tools panel" aria-label="맵 파일 관리">
+    <aside
+      className={`builder-map-tools panel ${mobileOpen ? "mobile-open" : "mobile-closed"}`}
+      aria-label="맵 파일 관리"
+    >
       <header>
         <span>MAP FILE</span>
         <b>맵 관리</b>
@@ -1241,6 +1271,7 @@ export function App() {
     [showExitConfirm, setShowExitConfirm] = useState(false),
     [exitSaving, setExitSaving] = useState(false),
     [exitError, setExitError] = useState(""),
+    [builderPanel, setBuilderPanel] = useState<"tools" | "files" | null>(null),
     [maps, setMaps] = useState<StoredMap[]>([]),
     [currentMap, setCurrentMap] = useState<StoredMap | null>(null),
     [scores, setScores] = useState<ScoreRecord[]>([]),
@@ -1280,6 +1311,9 @@ export function App() {
     };
   }, []);
   useEffect(() => gameAudio.setMode(snap.state), [snap.state]);
+  useEffect(() => {
+    if (snap.state !== "builder") setBuilderPanel(null);
+  }, [snap.state]);
   useEffect(() => {
     const closeOverlay = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
@@ -1500,8 +1534,23 @@ export function App() {
           : snap.kills >= 200
             ? "B"
             : "C";
+  const activeBuilderTool =
+    snap.buildTool === "erase"
+      ? "삭제"
+      : snap.buildTool === "path"
+        ? "경로"
+        : snap.buildTool === "exit"
+          ? "출구 이동"
+          : snap.buildTool
+            ? BUILDINGS[snap.buildTool].name
+            : "편집 도구";
   return (
-    <main className="game-shell" ref={shell}>
+    <main
+      className={
+        snap.state === "builder" ? "game-shell builder-shell" : "game-shell"
+      }
+      ref={shell}
+    >
       <div className="board" ref={host} />
       <div className="grain" />
       {snap.state === "ready" && (
@@ -1680,14 +1729,58 @@ export function App() {
               <b>MAP BUILDER</b>
               <span>정사각형 탑다운 GRID · 건물 · 지형 · 적 이동 경로</span>
             </div>
-            <button onClick={() => engine.exitBuilder()}>
+            <button
+              onClick={() => {
+                setBuilderPanel(null);
+                engine.exitBuilder();
+              }}
+            >
               저장하고 홈으로
             </button>
           </div>
-          <BuildControls snap={snap} />
+          <nav className="builder-mobile-dock panel" aria-label="맵 편집 도구">
+            <button
+              className={builderPanel === "tools" ? "active" : ""}
+              onClick={() =>
+                setBuilderPanel((panel) => (panel === "tools" ? null : "tools"))
+              }
+            >
+              <span aria-hidden="true">▦</span>
+              <b>{activeBuilderTool}</b>
+            </button>
+            <button
+              className={builderPanel === "files" ? "active" : ""}
+              onClick={() =>
+                setBuilderPanel((panel) => (panel === "files" ? null : "files"))
+              }
+            >
+              <span aria-hidden="true">▤</span>
+              <b>맵 파일</b>
+            </button>
+          </nav>
+          {snap.pathEditing && (
+            <div className="builder-path-bar panel">
+              <b>경로 {snap.pathPoints.length}개 지점</b>
+              <button onClick={() => engine.undoPathPoint()}>되돌리기</button>
+              <button onClick={() => engine.cancelPathEdit()}>취소</button>
+              <button
+                className="save"
+                disabled={snap.pathPoints.length < 2}
+                onClick={() => engine.finishPathEdit()}
+              >
+                저장
+              </button>
+            </div>
+          )}
+          <BuildControls
+            snap={snap}
+            mobileOpen={builderPanel === "tools"}
+            onMobileDismiss={() => setBuilderPanel(null)}
+          />
           <BuilderMapTools
             maps={maps}
             current={currentMap}
+            mobileOpen={builderPanel === "files"}
             onRename={renameMap}
             onDuplicate={() => void duplicateMap()}
             onDelete={() => void removeMap()}
