@@ -1486,7 +1486,11 @@ export function App() {
               <b>{formatPlayTime(snap.elapsed)}</b>
             </div>
             <div className="spawn-stat">
-              <span>남은 병력</span>
+              <span>
+                {snap.state === "running"
+                  ? `포커 ${Math.ceil(snap.phaseTimeRemaining)}초`
+                  : "남은 병력"}
+              </span>
               <b>
                 {snap.remaining}
                 <small> / {snap.phaseTotal || "-"}</small>

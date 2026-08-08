@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GameEngine, type Unit } from "./Engine";
+import { GameEngine, PHASE_COMBAT_SECONDS, type Unit } from "./Engine";
 import {
   ENEMIES,
   ENEMY_ASSET_FILES,
@@ -130,9 +130,11 @@ describe("poker defense loop", () => {
     game.phaseSpawned = 0;
     game.queue = [{ kind: "juggernaut", group: "PHASE 1" }];
     game.state = "running";
-    game.update(0.6);
+    game.update(1.6);
     expect(game.enemies).toHaveLength(1);
-    game.update(1.3);
+    expect(game.state).toBe("running");
+    game.phaseElapsed = PHASE_COMBAT_SECONDS - 0.5;
+    game.update(1.6);
     expect(game.state).toBe("poker");
     expect(game.enemies).toHaveLength(1);
   });
@@ -144,8 +146,9 @@ describe("poker defense loop", () => {
     game.phaseTotal = 1;
     game.queue = [{ kind: "grunt", group: "PHASE 1" }];
     game.state = "running";
+    game.update(1.6);
+    game.phaseElapsed = PHASE_COMBAT_SECONDS - 0.5;
     game.update(0.6);
-    game.update(1.3);
     const progress = game.enemies[0].progress;
     game.update(10);
     expect(game.enemies[0].progress).toBe(progress);
@@ -173,13 +176,13 @@ describe("poker defense loop", () => {
       phase30 = game.phasePlan(30),
       phase100 = game.phasePlan(100);
 
-    expect(phase2.length).toBeLessThanOrEqual(20);
-    expect(phase10).toHaveLength(28);
-    expect(phase30).toHaveLength(34);
-    expect(phase100).toHaveLength(34);
+    expect(phase2).toHaveLength(22);
+    expect(phase10).toHaveLength(38);
+    expect(phase30).toHaveLength(44);
+    expect(phase100).toHaveLength(44);
     expect(phase10.at(-1)?.kind).toBe("boss");
     expect(phase30.filter((enemy) => enemy.kind === "boss")).toHaveLength(2);
-    expect(phase100.length * 0.55).toBeLessThan(19);
+    expect(phase100.length).toBeLessThanOrEqual(44);
     expect(
       phase30.filter((enemy) =>
         ["elite", "juggernaut", "warden", "boss"].includes(enemy.kind),
@@ -208,6 +211,7 @@ describe("poker defense loop", () => {
     game.enemies[0].hp = 0;
     game.update(0.1);
     expect(game.state).toBe("running");
+    game.phaseElapsed = PHASE_COMBAT_SECONDS - 0.5;
     game.update(1.2);
     expect(game.state).toBe("poker");
   });

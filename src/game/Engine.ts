@@ -142,11 +142,14 @@ export type Snapshot = {
   bestKills: number;
   phaseSpawned: number;
   phaseTotal: number;
+  phaseTimeRemaining: number;
   hand: Card[];
   discarded: number[];
   pokerResult: PokerResult | null;
   pendingUnits: { kind: UnitKind; tier: 1 | 2 | 3 | 4 }[];
 };
+
+export const PHASE_COMBAT_SECONDS = 30;
 
 const tierRange = [1, 1, 1.05, 1.1, 1.15];
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
@@ -255,6 +258,7 @@ export class GameEngine {
   phaseSpawned = 0;
   phaseTotal = 0;
   phaseEnding = 0;
+  phaseElapsed = 0;
   deck: Card[] = [];
   hand: Card[] = [];
   discarded = new Set<number>();
@@ -335,6 +339,7 @@ export class GameEngine {
     this.phaseSpawned = 0;
     this.phaseTotal = 0;
     this.phaseEnding = 0;
+    this.phaseElapsed = 0;
     this.deck = [];
     this.hand = [];
     this.discarded.clear();
@@ -1084,7 +1089,7 @@ export class GameEngine {
 
     // Keep endless phases brisk. Difficulty grows through the stronger mix
     // and the existing HP scale, not through an endlessly growing queue.
-    const phaseLimit = 18 + Math.min(Math.max(0, phase), 16);
+    const phaseLimit = 18 + Math.min(Math.max(0, phase) * 2, 26);
     if (out.length <= phaseLimit) return out;
 
     const bosses = out.filter((entry) => entry.kind === "boss"),
@@ -1128,6 +1133,7 @@ export class GameEngine {
     this.phaseTotal = this.queue.length;
     this.phaseSpawned = 0;
     this.phaseEnding = 0;
+    this.phaseElapsed = 0;
     this.spawnClock = 0;
     this.state = "running";
     this.placing = null;
@@ -1232,6 +1238,10 @@ export class GameEngine {
       bestKills: this.bestKills,
       phaseSpawned: this.phaseSpawned,
       phaseTotal: this.phaseTotal,
+      phaseTimeRemaining:
+        this.state === "running"
+          ? Math.max(0, PHASE_COMBAT_SECONDS - this.phaseElapsed)
+          : PHASE_COMBAT_SECONDS,
       hand: this.hand.map((c) => ({ ...c })),
       discarded: [...this.discarded],
       pokerResult: this.pokerResult
@@ -1320,18 +1330,24 @@ export class GameEngine {
     }
     if (this.state !== "running") return;
     this.elapsed += dt;
+    this.phaseElapsed += dt;
     if (this.message && this.elapsed >= this.messageUntil) this.message = "";
     this.spawnClock += dt;
-    while (this.queue.length && this.spawnClock >= 0.55) {
-      this.spawnClock -= 0.55;
+    const spawnInterval = Math.min(
+      1.5,
+      (PHASE_COMBAT_SECONDS - 3) / Math.max(1, this.phaseTotal),
+    );
+    while (this.queue.length && this.spawnClock >= spawnInterval) {
+      this.spawnClock -= spawnInterval;
       this.spawnEnemy();
     }
-    if (!this.queue.length && this.phaseSpawned === this.phaseTotal) {
-      this.phaseEnding += dt;
-      if (this.phaseEnding >= 1.2) {
-        this.beginPoker();
-        return;
-      }
+    if (
+      this.phaseElapsed >= PHASE_COMBAT_SECONDS &&
+      !this.queue.length &&
+      this.phaseSpawned === this.phaseTotal
+    ) {
+      this.beginPoker();
+      return;
     }
     for (const e of this.enemies) {
       const slow =
