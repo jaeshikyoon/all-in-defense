@@ -1634,6 +1634,28 @@ export function App() {
                 <span aria-hidden="true">▥</span>
                 <b>랭킹</b>
               </button>
+              {snap.state === "running" && (
+                <button
+                  className={
+                    snap.timeScale === 2 ? "speed-action active" : "speed-action"
+                  }
+                  title={
+                    snap.timeScale === 2
+                      ? "정상 속도로 전환"
+                      : "전투를 2배속으로 진행"
+                  }
+                  aria-label={
+                    snap.timeScale === 2
+                      ? "정상 속도로 전환"
+                      : "전투를 2배속으로 진행"
+                  }
+                  aria-pressed={snap.timeScale === 2}
+                  onClick={() => engine.toggleTimeScale()}
+                >
+                  <span aria-hidden="true">{snap.timeScale}×</span>
+                  <b>배속</b>
+                </button>
+              )}
               <SoundControl
                 enabled={soundEnabled}
                 volume={soundVolume}

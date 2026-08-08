@@ -144,6 +144,21 @@ describe("poker defense loop", () => {
     expect(game.phaseElapsed).toBe(1);
   });
 
+  it("applies 2x speed only while combat is running", () => {
+    const game = new GameEngine();
+    game.state = "running";
+    game.setTimeScale(2);
+    game.advance(1);
+    expect(game.elapsed).toBe(2);
+    expect(game.phaseElapsed).toBe(2);
+    expect(game.getSnapshot().timeScale).toBe(2);
+
+    game.state = "poker";
+    game.advance(1);
+    expect(game.elapsed).toBe(2);
+    expect(game.phaseElapsed).toBe(2);
+  });
+
   it("opens the next poker draw after scheduled spawning ends while survivors remain", () => {
     const game = new GameEngine();
     skipDeployment(game);

@@ -149,6 +149,7 @@ export type Snapshot = {
   phaseSpawned: number;
   phaseTotal: number;
   phaseTimeRemaining: number;
+  timeScale: 1 | 2;
   hand: Card[];
   discarded: number[];
   pokerResult: PokerResult | null;
@@ -284,6 +285,7 @@ export class GameEngine {
   phaseTotal = 0;
   phaseEnding = 0;
   phaseElapsed = 0;
+  timeScale: 1 | 2 = 1;
   uiPaused = false;
   deck: Card[] = [];
   hand: Card[] = [];
@@ -368,6 +370,7 @@ export class GameEngine {
     this.phaseTotal = 0;
     this.phaseEnding = 0;
     this.phaseElapsed = 0;
+    this.timeScale = 1;
     this.deck = [];
     this.hand = [];
     this.discarded.clear();
@@ -1237,6 +1240,16 @@ export class GameEngine {
     this.uiPaused = paused;
     this.emit(true);
   }
+  setTimeScale(scale: 1 | 2) {
+    this.timeScale = scale === 2 ? 2 : 1;
+    this.emit(true);
+  }
+  toggleTimeScale() {
+    this.setTimeScale(this.timeScale === 1 ? 2 : 1);
+  }
+  advance(realDt: number) {
+    this.update(realDt * (this.state === "running" ? this.timeScale : 1));
+  }
   setMessage(text: string, seconds = 2.5) {
     this.message = text;
     this.messageUntil = this.elapsed + seconds;
@@ -1337,6 +1350,7 @@ export class GameEngine {
         this.state === "running"
           ? Math.max(0, PHASE_COMBAT_SECONDS - this.phaseElapsed)
           : PHASE_COMBAT_SECONDS,
+      timeScale: this.timeScale,
       hand: this.hand.map((c) => ({ ...c })),
       discarded: [...this.discarded],
       pokerResult: this.pokerResult

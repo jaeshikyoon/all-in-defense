@@ -1644,7 +1644,7 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
       }
   };
   app.ticker.add((t) => {
-    engine.update(Math.min(t.deltaMS / 1000, 0.1));
+    engine.advance(Math.min(t.deltaMS / 1000, 0.1));
     render();
   });
   return () => {

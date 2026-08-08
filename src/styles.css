@@ -1089,6 +1089,21 @@ button {
 }
 .hud-actions > button > span { font-size: 18px; line-height: 1; }
 .hud-actions > button > b { font-size: 12px; white-space: nowrap; }
+.hud-actions > .speed-action {
+  font-variant-numeric: tabular-nums;
+}
+.hud-actions > .speed-action.active {
+  border-color: #ffc95e;
+  color: #ffe39a;
+  background: linear-gradient(180deg, #4a3618, #24190b);
+  box-shadow:
+    inset 0 0 14px rgba(255, 190, 70, 0.12),
+    0 0 12px rgba(255, 190, 70, 0.12);
+}
+.hud-actions > .speed-action.active > span {
+  color: #ffd36c;
+  font-weight: 900;
+}
 .hud-actions > .sound {
   width: auto;
   height: auto;
