@@ -151,9 +151,10 @@ export type Snapshot = {
 
 export const PHASE_COMBAT_SECONDS = 30;
 export const PHASE_SPAWN_INTERVAL_SECONDS = 0.75;
+export const PHASE_SPAWN_BURST_SIZE = 3;
 export const PHASE_ENEMY_COUNT = Math.floor(
   PHASE_COMBAT_SECONDS / PHASE_SPAWN_INTERVAL_SECONDS,
-);
+) * PHASE_SPAWN_BURST_SIZE;
 
 const tierRange = [1, 1, 1.05, 1.1, 1.15];
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
@@ -1091,9 +1092,9 @@ export class GameEngine {
       add("warden", Math.min(Math.floor((phase - 7) / 3), 4), out);
     if (phase % 10 === 0) add("boss", 1 + Math.floor(phase / 30), out);
 
-    // Every phase fills the same 30-second combat window at the same cadence.
-    // Difficulty grows through the stronger mix and existing HP scaling, not
-    // by stretching a small phase plan over the whole window.
+    // Every phase fills the same 30-second combat window with three-enemy
+    // lane bursts. Difficulty grows through the stronger mix and existing HP
+    // scaling, not by stretching sparse single spawns over the whole window.
     const phaseLimit = PHASE_ENEMY_COUNT;
     const bosses = out.filter((entry) => entry.kind === "boss"),
       regular = out.filter((entry) => entry.kind !== "boss"),
@@ -1349,14 +1350,15 @@ export class GameEngine {
     this.elapsed += dt;
     this.phaseElapsed += dt;
     if (this.message && this.elapsed >= this.messageUntil) this.message = "";
-    // Spawn at a fixed cadence in every phase. Deriving the count from elapsed
-    // time still catches up safely after a slow mobile frame.
+    // Fill all three visual lanes on every beat instead of releasing isolated
+    // enemies. Deriving the burst count from elapsed time also catches up
+    // safely after a slow mobile frame.
     const scheduledSpawned = Math.min(
       this.phaseTotal,
       Math.floor(
         Math.min(this.phaseElapsed, PHASE_COMBAT_SECONDS) /
           PHASE_SPAWN_INTERVAL_SECONDS,
-      ),
+      ) * PHASE_SPAWN_BURST_SIZE,
     );
     while (this.queue.length && this.phaseSpawned < scheduledSpawned) {
       this.spawnEnemy();

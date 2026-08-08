@@ -3,6 +3,7 @@ import {
   GameEngine,
   PHASE_COMBAT_SECONDS,
   PHASE_ENEMY_COUNT,
+  PHASE_SPAWN_BURST_SIZE,
   PHASE_SPAWN_INTERVAL_SECONDS,
   type Unit,
 } from "./Engine";
@@ -159,7 +160,7 @@ describe("poker defense loop", () => {
     expect(game.enemies).toHaveLength(1);
   });
 
-  it("spawns at the same fixed cadence throughout every 30-second phase", () => {
+  it("spawns three-enemy lane bursts at a fixed cadence for 30 seconds", () => {
     const game = new GameEngine();
     game.phase = 4;
     game.state = "running";
@@ -170,24 +171,32 @@ describe("poker defense loop", () => {
     game.phaseTotal = game.queue.length;
     game.phaseSpawned = 0;
 
-    game.update(10);
-    expect(game.phaseSpawned).toBe(
-      Math.floor(10 / PHASE_SPAWN_INTERVAL_SECONDS),
+    game.update(PHASE_SPAWN_INTERVAL_SECONDS - 0.01);
+    expect(game.phaseSpawned).toBe(0);
+    game.update(0.01);
+    expect(game.phaseSpawned).toBe(PHASE_SPAWN_BURST_SIZE);
+    expect(new Set(game.enemies.map((enemy) => enemy.lane))).toEqual(
+      new Set([0, -1, 1]),
     );
-    expect(game.queue).toHaveLength(27);
+
+    game.update(10 - PHASE_SPAWN_INTERVAL_SECONDS);
+    expect(game.phaseSpawned).toBe(
+      Math.floor(10 / PHASE_SPAWN_INTERVAL_SECONDS) * PHASE_SPAWN_BURST_SIZE,
+    );
+    expect(game.queue).toHaveLength(81);
     expect(game.state).toBe("running");
 
     game.update(10);
     expect(game.phaseSpawned).toBe(
-      Math.floor(20 / PHASE_SPAWN_INTERVAL_SECONDS),
+      Math.floor(20 / PHASE_SPAWN_INTERVAL_SECONDS) * PHASE_SPAWN_BURST_SIZE,
     );
-    expect(game.queue).toHaveLength(14);
+    expect(game.queue).toHaveLength(42);
 
     game.update(9);
     expect(game.phaseSpawned).toBe(
-      Math.floor(29 / PHASE_SPAWN_INTERVAL_SECONDS),
+      Math.floor(29 / PHASE_SPAWN_INTERVAL_SECONDS) * PHASE_SPAWN_BURST_SIZE,
     );
-    expect(game.queue).toHaveLength(2);
+    expect(game.queue).toHaveLength(6);
     expect(game.state).toBe("running");
 
     game.update(1);
