@@ -881,7 +881,8 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
       moved >= 16 &&
       down.button === 0 &&
       !e.shiftKey &&
-      !engine.buildMode
+      !engine.buildMode &&
+      !engine.placing
     ) {
       const left = Math.min(down.x, e.clientX) - r.left,
         right = Math.max(down.x, e.clientX) - r.left,
@@ -1281,7 +1282,7 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
         placementGhost.position.set(p.x, p.y + 8);
         placementGhost.scale.set(0.31);
         placementGhost.zIndex = p.y + 1;
-      }
+      } else if (placementGhost) placementGhost.visible = false;
     }
     if (!snap.placing && placementGhost) placementGhost.visible = false;
     if (

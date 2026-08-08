@@ -1619,6 +1619,12 @@ export class GameEngine {
     }
   }
   cancelPlacement() {
+    if (this.state === "deploy" && this.pendingUnits.length) {
+      this.placing = this.pendingUnits[0].kind;
+      this.setMessage("포커 보상 유닛을 먼저 배치하세요");
+      this.emit(true);
+      return;
+    }
     if (this.placing) {
       this.placing = null;
       this.setMessage("배치를 취소했습니다");
@@ -1626,6 +1632,13 @@ export class GameEngine {
     }
   }
   selectUnits(ids: number[]) {
+    if (this.state === "deploy" && this.pendingUnits.length) {
+      this.selected = null;
+      this.selectedIds = [];
+      this.placing = this.pendingUnits[0].kind;
+      this.emit(true);
+      return;
+    }
     this.placing = null;
     this.selectedIds = [...new Set(ids)].filter((id) =>
       this.units.some((u) => u.id === id),
@@ -1697,6 +1710,9 @@ export class GameEngine {
         this.placing = this.pendingUnits[0]?.kind ?? null;
         this.setMessage(`${UNITS[reward.kind].name} T${reward.tier} 배치 완료`);
         this.pushAudio("buy");
+      } else if (reward) {
+        this.placing = reward.kind;
+        this.setMessage("배치할 수 없는 위치입니다 · 빈 지형을 다시 선택하세요");
       }
       this.emit(true);
       return;

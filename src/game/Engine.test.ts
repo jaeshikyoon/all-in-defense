@@ -80,6 +80,35 @@ describe("poker defense loop", () => {
     );
   });
 
+  it("keeps a poker reward ready after an invalid deployment tap", () => {
+    const game = new GameEngine();
+    enterDeploy(game);
+    const pendingBefore = game.pendingUnits.map((unit) => ({ ...unit })),
+      placingBefore = game.placing,
+      nearestValidCell = game.nearestValidCell;
+    game.nearestValidCell = () => null;
+
+    game.clickWorld(-1000, -1000);
+
+    expect(game.state).toBe("deploy");
+    expect(game.pendingUnits).toEqual(pendingBefore);
+    expect(game.placing).toBe(placingBefore);
+    expect(game.getSnapshot().message).toContain("배치할 수 없는 위치");
+    game.nearestValidCell = nearestValidCell;
+  });
+
+  it("does not let selection cancel mandatory poker reward deployment", () => {
+    const game = new GameEngine();
+    enterDeploy(game);
+    const pendingBefore = game.pendingUnits.map((unit) => ({ ...unit })),
+      placingBefore = game.placing;
+
+    game.selectUnits([]);
+
+    expect(game.pendingUnits).toEqual(pendingBefore);
+    expect(game.placing).toBe(placingBefore);
+  });
+
   it("starts a phase only after all poker rewards have been deployed", () => {
     const game = new GameEngine();
     enterDeploy(game);
