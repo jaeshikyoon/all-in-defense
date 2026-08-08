@@ -198,6 +198,33 @@
     margin-bottom: 6px;
   }
 
+  .builder-shell .builder-map-list {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 190px;
+    max-height: none;
+    margin-bottom: 7px;
+    padding: 0 0 3px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+  }
+
+  .builder-shell .builder-map-list > button {
+    min-height: 58px;
+    grid-template-columns: 72px minmax(0, 1fr);
+    scroll-snap-align: start;
+  }
+
+  .builder-shell .builder-map-list .map-preview {
+    width: 72px;
+    height: 46px;
+  }
+
+  .builder-shell .builder-map-list > .builder-new-map {
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+
   .builder-shell .map-name-field {
     display: grid;
     grid-template-columns: 74px minmax(0, 1fr);
@@ -3570,6 +3597,90 @@ em {
 }
 .builder-map-tools header b {
   font-size: 14px;
+}
+.builder-map-list {
+  display: grid;
+  gap: 6px;
+  max-height: min(270px, 34vh);
+  margin-bottom: 10px;
+  padding-right: 3px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.builder-map-list > button {
+  position: relative;
+  min-width: 0;
+  min-height: 62px;
+  padding: 5px;
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #304f5b;
+  border-radius: 7px;
+  background: linear-gradient(145deg, #102731, #091820);
+  color: #d2e3e8;
+  text-align: left;
+  cursor: pointer;
+}
+.builder-map-list > button:hover,
+.builder-map-list > button.active {
+  border-color: #64e5d0;
+  background: linear-gradient(145deg, #174047, #0d272f);
+  box-shadow: inset 0 0 18px rgba(87, 232, 194, 0.1);
+}
+.builder-map-list .map-preview {
+  width: 82px;
+  height: 50px;
+  border-radius: 4px;
+  background: #061119;
+}
+.builder-map-list button > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.builder-map-list button > span b {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.builder-map-list button > span small {
+  color: #829aa4;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.builder-map-list button > em {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 2px 5px;
+  border: 1px solid #62e2c7;
+  border-radius: 999px;
+  background: #123e3b;
+  color: #9dffe8;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+}
+.builder-map-list > .builder-new-map {
+  grid-template-columns: 48px minmax(0, 1fr);
+  border-style: dashed;
+  border-color: #4b8190;
+}
+.builder-new-map > i {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid #57dcca88;
+  border-radius: 6px;
+  color: #73eed8;
+  background: #103338;
+  font-size: 25px;
+  font-style: normal;
 }
 .builder-file-actions {
   display: grid;

@@ -1196,6 +1196,8 @@ function BuilderMapTools({
   maps,
   current,
   mobileOpen,
+  onSelect,
+  onCreate,
   onRename,
   onDuplicate,
   onDelete,
@@ -1205,6 +1207,8 @@ function BuilderMapTools({
   maps: StoredMap[];
   current: StoredMap | null;
   mobileOpen: boolean;
+  onSelect: (map: StoredMap) => void;
+  onCreate: () => void;
   onRename: (name: string) => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -1218,8 +1222,34 @@ function BuilderMapTools({
     >
       <header>
         <span>MAP FILE</span>
-        <b>맵 관리</b>
+        <b>{current ? `${current.name} 편집 중` : "맵 선택"}</b>
       </header>
+      <div className="builder-map-list" aria-label="저장된 맵 목록">
+        <button className="builder-new-map" onClick={onCreate}>
+          <i aria-hidden="true">＋</i>
+          <span>
+            <b>새 전장</b>
+            <small>빈 맵에서 시작</small>
+          </span>
+        </button>
+        {sortBattlefieldsByName(maps).map((map) => (
+          <button
+            key={map.id}
+            className={current?.id === map.id ? "builder-map-card active" : "builder-map-card"}
+            onClick={() => onSelect(map)}
+            aria-current={current?.id === map.id ? "true" : undefined}
+          >
+            <MapPreview map={map} />
+            <span>
+              <b>{map.name}</b>
+              <small>
+                {map.width}×{map.height} · 입구 {map.routes.length}
+              </small>
+            </span>
+            {current?.id === map.id && <em>편집 중</em>}
+          </button>
+        ))}
+      </div>
       {current && (
         <>
           <label className="map-name-field">
@@ -1278,7 +1308,8 @@ export function App() {
     [storageReady, setStorageReady] = useState(false),
     [storageError, setStorageError] = useState("");
   const currentMapRef = useRef<StoredMap | null>(null),
-    defeatRecorded = useRef(false);
+    defeatRecorded = useRef(false),
+    builderRevisedMaps = useRef(new Set<string>());
   useEffect(() => engine.subscribe(() => setSnap(engine.getSnapshot())), []);
   useEffect(
     () =>
@@ -1312,7 +1343,10 @@ export function App() {
   }, []);
   useEffect(() => gameAudio.setMode(snap.state), [snap.state]);
   useEffect(() => {
-    if (snap.state !== "builder") setBuilderPanel(null);
+    if (snap.state !== "builder") {
+      setBuilderPanel(null);
+      builderRevisedMaps.current.clear();
+    }
   }, [snap.state]);
   useEffect(() => {
     const closeOverlay = (event: KeyboardEvent) => {
@@ -1416,13 +1450,29 @@ export function App() {
       dispose?.();
     };
   }, []);
-  const selectMap = async (map: StoredMap) => {
-      if (snap.state !== "ready") return;
-      currentMapRef.current = map;
-      setCurrentMap(map);
-      engine.applyMapData(map);
-      await setCurrentMapId(map.id);
-      const nextScores = await getMapScores(map.id, map.revision);
+  const selectMap = async (map: StoredMap, forBuilder = false) => {
+      const editing = forBuilder && snap.state === "builder";
+      if (snap.state !== "ready" && !editing) return;
+      let selectedMap = map;
+      if (editing && !builderRevisedMaps.current.has(map.id)) {
+        selectedMap = {
+          ...map,
+          revision: map.revision + 1,
+          updatedAt: Date.now(),
+        };
+        builderRevisedMaps.current.add(map.id);
+        await saveStoredMap(selectedMap);
+        setMaps((items) =>
+          items.map((item) => (item.id === selectedMap.id ? selectedMap : item)),
+        );
+      }
+      currentMapRef.current = selectedMap;
+      setCurrentMap(selectedMap);
+      engine.applyMapData(selectedMap);
+      await setCurrentMapId(selectedMap.id);
+      const nextScores = editing
+        ? []
+        : await getMapScores(selectedMap.id, selectedMap.revision);
       setScores(nextScores);
       engine.setBestKills(nextScores[0]?.kills ?? 0);
     },
@@ -1439,7 +1489,33 @@ export function App() {
       const copy = createStoredMap(`${currentMap.name} 복사본`, currentMap);
       await saveStoredMap(copy);
       setMaps(await listMaps());
-      await selectMap(copy);
+      if (snap.state === "builder") builderRevisedMaps.current.add(copy.id);
+      await selectMap(copy, snap.state === "builder");
+    },
+    createBlankMap = async () => {
+      const existingNames = new Set(maps.map((map) => map.name));
+      let number = maps.length + 1,
+        name = `새 전장 ${number}`;
+      while (existingNames.has(name)) name = `새 전장 ${++number}`;
+      const blank = createStoredMap(name, {
+        width: 52,
+        height: 46,
+        seed: Date.now() >>> 0,
+        objects: [],
+        routes: [
+          [
+            [2, 23],
+            [26, 23],
+            [50, 23],
+          ],
+        ],
+        routeStartPhases: [1],
+      });
+      await saveStoredMap(blank);
+      builderRevisedMaps.current.add(blank.id);
+      setMaps(await listMaps());
+      await selectMap(blank, true);
+      engine.setMessage(`${blank.name} 맵을 새로 만들었습니다`, 3);
     },
     removeMap = async () => {
       if (!currentMap || maps.length <= 1) return;
@@ -1447,7 +1523,7 @@ export function App() {
       await deleteStoredMap(currentMap.id);
       const remaining = await listMaps();
       setMaps(remaining);
-      await selectMap(remaining[0]);
+      await selectMap(remaining[0], snap.state === "builder");
     },
     downloadMap = () => {
       if (!currentMap) return;
@@ -1464,13 +1540,15 @@ export function App() {
         const imported = importMapJson(await file.text());
         await saveStoredMap(imported);
         setMaps(await listMaps());
-        await selectMap(imported);
+        if (snap.state === "builder") builderRevisedMaps.current.add(imported.id);
+        await selectMap(imported, snap.state === "builder");
         engine.setMessage("맵 JSON을 불러왔습니다.");
       } catch (error) {
         engine.setMessage(error instanceof Error ? error.message : "맵을 불러오지 못했습니다.", 5);
       }
     },
     openBuilder = async () => {
+      builderRevisedMaps.current.clear();
       if (!currentMap) {
         engine.enterBuilder();
         return;
@@ -1481,6 +1559,7 @@ export function App() {
       setMaps((items) => items.map((item) => (item.id === revised.id ? revised : item)));
       setScores([]);
       engine.setBestKills(0);
+      builderRevisedMaps.current.add(revised.id);
       await saveStoredMap(revised);
       engine.enterBuilder();
     };
@@ -1781,6 +1860,8 @@ export function App() {
             maps={maps}
             current={currentMap}
             mobileOpen={builderPanel === "files"}
+            onSelect={(map) => void selectMap(map, true)}
+            onCreate={() => void createBlankMap()}
             onRename={renameMap}
             onDuplicate={() => void duplicateMap()}
             onDelete={() => void removeMap()}
