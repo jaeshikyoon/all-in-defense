@@ -1,13 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   GameEngine,
-  getPhaseSpawnCountAt,
   PHASE_COMBAT_SECONDS,
   PHASE_ENEMY_COUNT,
-  PHASE_FIRST_SPAWN_DELAY_SECONDS,
-  PHASE_GROUP_MEMBER_INTERVAL_SECONDS,
-  PHASE_GROUP_REST_SECONDS,
-  PHASE_SPAWN_GROUP_SIZE,
   type Unit,
 } from "./Engine";
 import {
@@ -163,54 +158,49 @@ describe("poker defense loop", () => {
     expect(game.enemies).toHaveLength(1);
   });
 
-  it("spawns twelve-enemy groups with a visible rest between them", () => {
+  it("uses varied squad sizes and visible rests for different enemy types", () => {
     const game = new GameEngine();
-    game.phase = 4;
+    const entries = <T extends keyof typeof ENEMIES>(kind: T, count: number) =>
+        Array.from({ length: count }, () => ({ kind, group: "PHASE 10" })),
+      deployment = game.buildPhaseDeployment([
+        ...entries("grunt", 12),
+        ...entries("runner", 8),
+        ...entries("armored", 4),
+        ...entries("juggernaut", 2),
+        ...entries("boss", 1),
+      ]),
+      squadSizes = new Map<number, number>();
+    for (const enemy of deployment.queue) {
+      const squad = enemy.squad ?? -1;
+      squadSizes.set(squad, (squadSizes.get(squad) ?? 0) + 1);
+    }
+    expect([...squadSizes.values()]).toEqual([12, 8, 4, 2, 1]);
+    expect(deployment.times[12] - deployment.times[11]).toBeGreaterThan(
+      (deployment.times[1] - deployment.times[0]) * 3,
+    );
+
+    game.phase = 10;
     game.state = "running";
-    game.queue = Array.from({ length: PHASE_ENEMY_COUNT }, () => ({
-      kind: "juggernaut" as const,
-      group: "PHASE 4",
-    }));
+    game.queue = deployment.queue;
+    game.phaseSpawnTimes = deployment.times;
     game.phaseTotal = game.queue.length;
     game.phaseSpawned = 0;
 
-    game.update(PHASE_FIRST_SPAWN_DELAY_SECONDS - 0.01);
-    expect(game.phaseSpawned).toBe(0);
-    game.update(0.01);
-    expect(game.phaseSpawned).toBe(1);
-    game.update(
-      PHASE_GROUP_MEMBER_INTERVAL_SECONDS * (PHASE_SPAWN_GROUP_SIZE - 1),
-    );
-    expect(game.phaseSpawned).toBe(PHASE_SPAWN_GROUP_SIZE);
+    game.update(deployment.times[11] + 0.001);
+    expect(game.phaseSpawned).toBe(12);
     expect(new Set(game.enemies.map((enemy) => enemy.lane))).toEqual(
       new Set([0, -1, 1]),
     );
-    game.update(PHASE_GROUP_REST_SECONDS - 0.01);
-    expect(game.phaseSpawned).toBe(PHASE_SPAWN_GROUP_SIZE);
-    game.update(0.01);
-    expect(game.phaseSpawned).toBe(PHASE_SPAWN_GROUP_SIZE + 1);
-
-    game.update(
-      10 -
-        PHASE_FIRST_SPAWN_DELAY_SECONDS -
-        PHASE_GROUP_MEMBER_INTERVAL_SECONDS * (PHASE_SPAWN_GROUP_SIZE - 1) -
-        PHASE_GROUP_REST_SECONDS,
-    );
-    expect(game.phaseSpawned).toBe(getPhaseSpawnCountAt(10));
-    expect(game.queue).toHaveLength(PHASE_ENEMY_COUNT - getPhaseSpawnCountAt(10));
+    const gap = deployment.times[12] - game.phaseElapsed;
+    game.update(gap * 0.5);
+    expect(game.phaseSpawned).toBe(12);
+    game.update(gap * 0.5 + 0.001);
+    expect(game.phaseSpawned).toBe(13);
     expect(game.state).toBe("running");
 
-    game.update(10);
-    expect(game.phaseSpawned).toBe(getPhaseSpawnCountAt(20));
-    expect(game.queue).toHaveLength(PHASE_ENEMY_COUNT - getPhaseSpawnCountAt(20));
-
-    game.update(9);
-    expect(game.phaseSpawned).toBe(getPhaseSpawnCountAt(29));
-    expect(game.queue).toHaveLength(PHASE_ENEMY_COUNT - getPhaseSpawnCountAt(29));
-    expect(game.state).toBe("running");
-
-    game.update(1);
-    expect(game.phaseSpawned).toBe(PHASE_ENEMY_COUNT);
+    game.phaseElapsed = PHASE_COMBAT_SECONDS - 0.1;
+    game.update(0.1);
+    expect(game.phaseSpawned).toBe(game.phaseTotal);
     expect(game.queue).toHaveLength(0);
     expect(game.state).toBe("poker");
   });

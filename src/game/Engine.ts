@@ -47,6 +47,11 @@ type Enemy = {
   route: number;
   lane: -1 | 0 | 1;
 };
+type EnemyQueueEntry = {
+  kind: EnemyKind;
+  group: string;
+  squad?: number;
+};
 export type Shot = {
   x1: number;
   y1: number;
@@ -150,30 +155,25 @@ export type Snapshot = {
 };
 
 export const PHASE_COMBAT_SECONDS = 30;
-export const PHASE_SPAWN_GROUP_SIZE = 12;
-export const PHASE_FIRST_SPAWN_DELAY_SECONDS = 0.15;
-export const PHASE_GROUP_MEMBER_INTERVAL_SECONDS = 0.22;
-export const PHASE_GROUP_REST_SECONDS = 3;
-export const PHASE_GROUP_INTERVAL_SECONDS =
-  (PHASE_SPAWN_GROUP_SIZE - 1) * PHASE_GROUP_MEMBER_INTERVAL_SECONDS +
-  PHASE_GROUP_REST_SECONDS;
-export const getPhaseSpawnCountAt = (elapsed: number) => {
-  const time = Math.max(0, Math.min(PHASE_COMBAT_SECONDS, elapsed));
-  if (time < PHASE_FIRST_SPAWN_DELAY_SECONDS) return 0;
-  const sinceFirst = time - PHASE_FIRST_SPAWN_DELAY_SECONDS,
-    completedGroups = Math.floor(sinceFirst / PHASE_GROUP_INTERVAL_SECONDS),
-    currentGroupTime =
-      sinceFirst - completedGroups * PHASE_GROUP_INTERVAL_SECONDS,
-    currentGroupCount = Math.min(
-      PHASE_SPAWN_GROUP_SIZE,
-      Math.floor(
-        (currentGroupTime + Number.EPSILON) /
-          PHASE_GROUP_MEMBER_INTERVAL_SECONDS,
-      ) + 1,
-    );
-  return completedGroups * PHASE_SPAWN_GROUP_SIZE + currentGroupCount;
+export const PHASE_ENEMY_COUNT = 72;
+const PHASE_FIRST_SPAWN_DELAY_SECONDS = 0.15;
+const ENEMY_SPAWN_PROFILE: Record<
+  EnemyKind,
+  { groupSize: number; memberInterval: number; rest: number }
+> = {
+  grunt: { groupSize: 12, memberInterval: 0.16, rest: 1.7 },
+  runner: { groupSize: 8, memberInterval: 0.11, rest: 1.35 },
+  drone: { groupSize: 6, memberInterval: 0.15, rest: 1.45 },
+  sapper: { groupSize: 5, memberInterval: 0.18, rest: 1.65 },
+  phantom: { groupSize: 6, memberInterval: 0.13, rest: 1.5 },
+  armored: { groupSize: 4, memberInterval: 0.26, rest: 1.9 },
+  brute: { groupSize: 3, memberInterval: 0.3, rest: 2.05 },
+  phase_tracker: { groupSize: 4, memberInterval: 0.18, rest: 1.75 },
+  elite: { groupSize: 3, memberInterval: 0.3, rest: 2.1 },
+  juggernaut: { groupSize: 2, memberInterval: 0.4, rest: 2.3 },
+  warden: { groupSize: 2, memberInterval: 0.44, rest: 2.45 },
+  boss: { groupSize: 1, memberInterval: 0, rest: 2.8 },
 };
-export const PHASE_ENEMY_COUNT = getPhaseSpawnCountAt(PHASE_COMBAT_SECONDS);
 
 const tierRange = [1, 1, 1.05, 1.1, 1.15];
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
@@ -235,7 +235,8 @@ export class GameEngine {
   selectedIds: number[] = [];
   placing: UnitKind | null = null;
   nextId = 1;
-  queue: { kind: EnemyKind; group: string }[] = [];
+  queue: EnemyQueueEntry[] = [];
+  phaseSpawnTimes: number[] = [];
   spawned = 0;
   bossSpawned = false;
   bossDefeated = false;
@@ -360,6 +361,7 @@ export class GameEngine {
     this.lastAttackAudioAt.clear();
     this.units = [];
     this.queue = [];
+    this.phaseSpawnTimes = [];
     this.phase = 0;
     this.phaseSpawned = 0;
     this.phaseTotal = 0;
@@ -1111,9 +1113,8 @@ export class GameEngine {
       add("warden", Math.min(Math.floor((phase - 7) / 3), 4), out);
     if (phase % 10 === 0) add("boss", 1 + Math.floor(phase / 30), out);
 
-    // Every phase uses visible enemy groups: twelve quick sequential spawns
-    // followed by a three-second rest. Difficulty grows through the stronger
-    // mix and existing HP scaling rather than an increasing spawn rate.
+    // Keep a stable composition budget. Deployment timing later converts this
+    // pool into differently sized squads for each enemy type.
     const phaseLimit = PHASE_ENEMY_COUNT;
     const bosses = out.filter((entry) => entry.kind === "boss"),
       regular = out.filter((entry) => entry.kind !== "boss"),
@@ -1159,10 +1160,55 @@ export class GameEngine {
     selectedIndices.sort((a, b) => a - b);
     return [...selectedIndices.map((index) => regular[index]), ...bosses];
   }
+  buildPhaseDeployment(plan: EnemyQueueEntry[]) {
+    const buckets = new Map<EnemyKind, EnemyQueueEntry[]>();
+    for (const entry of plan) {
+      const bucket = buckets.get(entry.kind) ?? [];
+      bucket.push(entry);
+      buckets.set(entry.kind, bucket);
+    }
+    const kinds = [...buckets.keys()],
+      squads: EnemyQueueEntry[][] = [];
+    let squadId = 0;
+    while ([...buckets.values()].some((bucket) => bucket.length)) {
+      for (const kind of kinds) {
+        const bucket = buckets.get(kind);
+        if (!bucket?.length) continue;
+        const size = Math.min(ENEMY_SPAWN_PROFILE[kind].groupSize, bucket.length);
+        squads.push(
+          bucket.splice(0, size).map((entry) => ({
+            ...entry,
+            squad: squadId,
+          })),
+        );
+        squadId++;
+      }
+    }
+
+    const queue = squads.flat(),
+      rawTimes: number[] = [];
+    let cursor = 0;
+    for (const squad of squads) {
+      const profile = ENEMY_SPAWN_PROFILE[squad[0].kind];
+      for (let index = 0; index < squad.length; index++)
+        rawTimes.push(cursor + index * profile.memberInterval);
+      cursor +=
+        Math.max(0, squad.length - 1) * profile.memberInterval + profile.rest;
+    }
+    const lastRawTime = rawTimes.at(-1) ?? 0,
+      availableTime = PHASE_COMBAT_SECONDS - PHASE_FIRST_SPAWN_DELAY_SECONDS - 0.2,
+      scale = lastRawTime > 0 ? availableTime / lastRawTime : 1,
+      times = rawTimes.map(
+        (time) => PHASE_FIRST_SPAWN_DELAY_SECONDS + time * scale,
+      );
+    return { queue, times };
+  }
   startPhase() {
     if (this.state !== "deploy" || this.pendingUnits.length) return;
     this.phase++;
-    this.queue = this.phasePlan(this.phase);
+    const deployment = this.buildPhaseDeployment(this.phasePlan(this.phase));
+    this.queue = deployment.queue;
+    this.phaseSpawnTimes = deployment.times;
     this.phaseTotal = this.queue.length;
     this.phaseSpawned = 0;
     this.phaseEnding = 0;
@@ -1369,14 +1415,15 @@ export class GameEngine {
     this.elapsed += dt;
     this.phaseElapsed += dt;
     if (this.message && this.elapsed >= this.messageUntil) this.message = "";
-    // Release a twelve-enemy group in quick succession, then leave a visible
-    // rest. Deriving the count from elapsed time catches up after a slow mobile
-    // frame without collapsing the normal rhythm into simultaneous spawns.
-    const scheduledSpawned = Math.min(
-      this.phaseTotal,
-      getPhaseSpawnCountAt(this.phaseElapsed),
-    );
-    while (this.queue.length && this.phaseSpawned < scheduledSpawned) {
+    if (this.phaseSpawnTimes.length !== this.phaseTotal) {
+      const deployment = this.buildPhaseDeployment(this.queue);
+      this.queue = deployment.queue;
+      this.phaseSpawnTimes = deployment.times;
+    }
+    while (
+      this.queue.length &&
+      this.phaseElapsed >= (this.phaseSpawnTimes[this.phaseSpawned] ?? Infinity)
+    ) {
       this.spawnEnemy();
     }
     if (
