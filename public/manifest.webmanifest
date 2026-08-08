@@ -1,0 +1,25 @@
+{
+  "name": "ALL-IN DEFENSE",
+  "short_name": "ALL-IN",
+  "description": "포커 족보로 유닛을 획득해 끝없는 전선을 방어하는 포커 디펜스 게임",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#071019",
+  "theme_color": "#071019",
+  "icons": [
+    {
+      "src": "assets/icons/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
