@@ -1771,6 +1771,17 @@ export function App() {
               </button>
               {snap.state === "running" && (
                 <button
+                  className={snap.paused ? "pause-action active" : "pause-action"}
+                  title={snap.paused ? "전투 재개" : "전투 일시정지"}
+                  aria-label={snap.paused ? "전투 재개" : "전투 일시정지"}
+                  onClick={() => engine.setPaused(!snap.paused)}
+                >
+                  <span aria-hidden="true">{snap.paused ? "▶" : "Ⅱ"}</span>
+                  <b>{snap.paused ? "재개" : "일시정지"}</b>
+                </button>
+              )}
+              {snap.state === "running" && (
+                <button
                   className={
                     snap.timeScale > 1 ? "speed-action active" : "speed-action"
                   }
@@ -1794,6 +1805,18 @@ export function App() {
             </nav>
           )}
         </header>
+      )}
+      {snap.state === "running" && snap.paused && !showExitConfirm && (
+        <div className="pause-overlay" role="dialog" aria-label="전투 일시정지">
+          <div className="pause-card panel">
+            <span className="eyebrow">COMBAT PAUSED</span>
+            <h2>전투 일시정지</h2>
+            <p>전장의 모든 움직임과 공격이 멈췄습니다.</p>
+            <button className="primary" onClick={() => engine.setPaused(false)}>
+              전투 재개
+            </button>
+          </div>
+        </div>
       )}
       {snap.state === "running" && (
         <div className="group-banner">

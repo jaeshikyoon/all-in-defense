@@ -537,6 +537,35 @@ button {
   font-size: var(--game-font-min);
   letter-spacing: 0.5px;
 }
+.pause-overlay {
+  position: absolute;
+  z-index: 18;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(1, 7, 12, 0.36);
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+}
+.pause-card {
+  width: min(360px, calc(100vw - 32px));
+  padding: 26px 24px 22px;
+  text-align: center;
+  pointer-events: auto;
+  border-color: #62e8cf;
+  box-shadow: 0 0 0 1px #62e8cf33, 0 18px 50px #000b;
+}
+.pause-card h2 {
+  margin: 8px 0 6px;
+  font-size: clamp(22px, 4vw, 30px);
+}
+.pause-card p {
+  margin: 0 0 18px;
+  color: #aac3ca;
+  font-size: var(--game-font-min);
+}
+.pause-card button { min-width: 150px; }
 .group-banner span {
   color: #768f9d;
 }
@@ -1397,6 +1426,12 @@ button {
 .hud-actions > .speed-action.active > span {
   color: #ffd36c;
   font-weight: 900;
+}
+.hud-actions > .pause-action.active {
+  border-color: #62e8cf;
+  color: #8dffe8;
+  background: linear-gradient(180deg, #164b4b, #0b292c);
+  box-shadow: 0 0 12px rgba(98, 232, 207, 0.18);
 }
 .hud-actions > .sound {
   width: auto;

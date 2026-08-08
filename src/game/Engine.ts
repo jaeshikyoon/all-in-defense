@@ -127,6 +127,7 @@ export type Snapshot = {
   groupEta: number;
   bossActive: boolean;
   elapsed: number;
+  paused: boolean;
   message?: string;
   loot: LootOpportunity | null;
   wheelMode: "points" | "loot";
@@ -1542,6 +1543,7 @@ export class GameEngine {
       groupEta: this.groupBreak,
       bossActive: this.enemies.some((e) => e.kind === "boss"),
       elapsed: this.elapsed,
+      paused: this.uiPaused,
       message: this.message,
       loot: this.lootOpportunity ? { ...this.lootOpportunity } : null,
       wheelMode: this.wheelMode,
