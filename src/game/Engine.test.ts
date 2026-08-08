@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ENEMY_WORLD_SPEED_SCALE,
   GameEngine,
   PHASE_COMBAT_SECONDS,
   PHASE_ENEMY_COUNT,
@@ -370,7 +371,10 @@ describe("poker defense loop", () => {
       lane: 0,
     });
     game.update(5);
-    expect(game.enemies[0].progress).toBeCloseTo((5 * 0.2304) / 48, 6);
+    expect(game.enemies[0].progress).toBeCloseTo(
+      (5 * ENEMY_WORLD_SPEED_SCALE) / 48,
+      6,
+    );
   });
 
   it("keeps world movement speed constant when a map route gets longer", () => {
@@ -540,7 +544,7 @@ describe("poker defense loop", () => {
     const before = game.enemies[0].progress;
     game.update(1);
     expect(game.enemies[0].progress - before).toBeCloseTo(
-      (0.5 * 0.2304) / 48,
+      (0.5 * ENEMY_WORLD_SPEED_SCALE) / 48,
       5,
     );
   });

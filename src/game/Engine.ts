@@ -198,9 +198,9 @@ const pointOnPolyline = (
     y: a[1] + (b[1] - a[1]) * t,
   };
 };
+export const ENEMY_WORLD_SPEED_SCALE = 0.26496;
 const NORMAL_TRAVEL_SECONDS = 48,
   BOSS_TRAVEL_SECONDS = 84,
-  ENEMY_WORLD_SPEED_SCALE = 0.2304,
   REFERENCE_ROUTE_LENGTH = PATH.slice(1).reduce(
     (total, point, index) =>
       total +
