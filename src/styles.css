@@ -4820,6 +4820,22 @@ button.close.game-button-icon,
   }
 }
 
+/* Desktop poker footer: keep the two actions together instead of stretching
+   them to opposite edges of the modal at short PC viewport heights. */
+@media (min-width: 901px) {
+  .poker-footer-actions {
+    width: max-content;
+    max-width: 100%;
+    margin-right: auto;
+    margin-left: auto;
+  }
+  .poker-footer-actions .poker-guide-toggle {
+    min-width: 140px;
+    min-height: 50px;
+    font-size: 15px;
+  }
+}
+
 @keyframes rotate-device-hint {
   0%, 100% { transform: rotate(0deg); }
   45%, 65% { transform: rotate(90deg); }
