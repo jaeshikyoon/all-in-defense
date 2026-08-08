@@ -601,10 +601,14 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
       sprite.scale.set(getBuilderAssetScale(kind));
       return;
     }
+    const [footprintWidth, footprintHeight] = getMapAssetFootprint(kind),
+      footprintScale = Math.max(footprintWidth, footprintHeight);
     sprite.anchor.set(0.5, 0.97);
     sprite.position.set(p.x, p.y + 8);
     sprite.rotation = 0;
-    sprite.scale.set(spec.scale);
+    // Builder footprints are authoritative: a 2×2 structure must also read
+    // as a two-cell structure during battle, not shrink to a one-cell icon.
+    sprite.scale.set(spec.scale * footprintScale);
   };
   const syncBuildObject = (object: MapObject) => {
     const spec = BUILDINGS[object.kind],
