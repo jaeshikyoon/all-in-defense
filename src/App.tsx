@@ -371,7 +371,7 @@ function PokerModal({ snap }: { snap: Snapshot }) {
     <div className="modal-back poker-back">
       <section className="poker-modal panel">
         <p className="eyebrow">PHASE {snap.phase + 1}</p>
-        <h2>{result ? result.name : "포커 드로우"}</h2>
+        <h2>포커 드로우</h2>
         <div className="poker-hand">
           {snap.hand.map((card, index) => (
             <button
@@ -395,7 +395,7 @@ function PokerModal({ snap }: { snap: Snapshot }) {
           <>
             <div className="poker-result">
               <strong>{result.name}</strong>
-              <span>T1 지급</span>
+              <span>보상 유닛 · T1</span>
             </div>
             <div className="reward-row">
               {result.rewards.map((reward, index) => (
@@ -418,6 +418,10 @@ function PokerModal({ snap }: { snap: Snapshot }) {
                 </div>
               ))}
             </div>
+          </>
+        ) : null}
+        <div className="poker-footer-actions">
+          {result ? (
             <GameButton
               variant="primary"
               className="poker-action"
@@ -425,8 +429,7 @@ function PokerModal({ snap }: { snap: Snapshot }) {
             >
               배치 시작
             </GameButton>
-          </>
-        ) : (
+          ) : (
           <GameButton
             variant="primary"
             className="poker-action"
@@ -436,14 +439,15 @@ function PokerModal({ snap }: { snap: Snapshot }) {
               ? `${snap.discarded.length}장 교체 후 확인`
               : "결과 확인"}
           </GameButton>
-        )}
-        <GameButton
-          variant="secondary"
-          className="poker-guide-toggle"
-          onClick={() => setShowRewards(true)}
-        >
-          족보 · 유닛
-        </GameButton>
+          )}
+          <GameButton
+            variant="secondary"
+            className="poker-guide-toggle"
+            onClick={() => setShowRewards(true)}
+          >
+            족보 · 유닛
+          </GameButton>
+        </div>
         {showRewards && (
           <div className="poker-guide">
             <header>

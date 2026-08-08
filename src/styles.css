@@ -3092,6 +3092,17 @@ em {
   margin-top: 25px;
   font-size: 15px;
 }
+.poker-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 18px;
+}
+.poker-footer-actions .poker-action,
+.poker-footer-actions .poker-guide-toggle {
+  margin-top: 0;
+}
 .poker-odds {
   display: block;
   margin-top: 14px;
@@ -4145,8 +4156,13 @@ button.close.game-button-icon,
   }
 
   .poker-modal h2 {
-    margin: 1px 0;
-    font-size: 22px;
+    margin: 0 0 3px;
+    font-size: 20px;
+  }
+
+  .poker-modal > .eyebrow {
+    margin: 0;
+    line-height: 1.2;
   }
 
   .poker-copy {
@@ -4154,13 +4170,14 @@ button.close.game-button-icon,
   }
 
   .poker-hand {
-    width: min(540px, 74vw);
-    gap: 7px;
+    width: min(450px, 68vw);
+    gap: 6px;
   }
 
   .poker-hand button {
-    border-width: 3px;
-    border-radius: 9px;
+    max-height: 104px;
+    border-width: 2px;
+    border-radius: 8px;
   }
 
   .poker-hand button b {
@@ -4170,18 +4187,79 @@ button.close.game-button-icon,
   }
 
   .poker-hand button span {
-    font-size: clamp(28px, 8dvh, 40px);
+    font-size: clamp(25px, 7dvh, 34px);
+  }
+
+  .poker-hand button small {
+    bottom: 4px;
+    font-size: 10px;
+  }
+
+  .poker-result {
+    gap: 8px;
+    margin: 6px 0 5px;
+  }
+
+  .poker-result strong {
+    font-size: 19px;
+  }
+
+  .poker-result span {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+
+  .reward-row {
+    gap: 5px;
+    flex-wrap: nowrap;
+    max-width: 100%;
+  }
+
+  .reward-row > div {
+    min-width: 0;
+    flex: 0 1 150px;
+    padding: 5px 7px;
+    grid-template-columns: 25px minmax(0, 1fr);
+  }
+
+  .reward-row i {
+    font-size: 21px;
+  }
+
+  .reward-row b {
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .reward-row small {
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .poker-footer-actions {
+    gap: 7px;
+    margin-top: 6px;
   }
 
   .poker-action {
-    min-width: 240px;
+    min-width: min(220px, 42vw);
     min-height: var(--mobile-touch);
-    margin-top: 7px;
+    margin-top: 0;
+  }
+
+  .poker-footer-actions .poker-guide-toggle {
+    min-width: 112px;
+    min-height: var(--mobile-touch);
+    margin-top: 0;
   }
 
   .poker-ladder,
   .poker-odds,
-  .poker-guide-toggle {
+  .poker-guide-toggle:not(.poker-footer-actions .poker-guide-toggle) {
     margin-top: 5px;
   }
 
