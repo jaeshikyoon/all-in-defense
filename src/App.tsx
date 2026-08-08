@@ -1248,8 +1248,25 @@ export function App() {
   );
   useEffect(() => {
     const unlock = () => void gameAudio.unlock();
-    window.addEventListener("pointerdown", unlock, { passive: true, once: true });
-    return () => window.removeEventListener("pointerdown", unlock);
+    const unlockAfterVisibility = () => {
+      if (document.visibilityState === "visible") void gameAudio.unlock();
+    };
+    const touchOptions: AddEventListenerOptions = {
+      capture: true,
+      passive: true,
+    };
+    // Keep these listeners active: iOS can interrupt Web Audio after the app
+    // is backgrounded, so the next accepted gesture must resume it again.
+    window.addEventListener("pointerdown", unlock, touchOptions);
+    window.addEventListener("touchend", unlock, touchOptions);
+    window.addEventListener("keydown", unlock, true);
+    document.addEventListener("visibilitychange", unlockAfterVisibility);
+    return () => {
+      window.removeEventListener("pointerdown", unlock, touchOptions);
+      window.removeEventListener("touchend", unlock, touchOptions);
+      window.removeEventListener("keydown", unlock, true);
+      document.removeEventListener("visibilitychange", unlockAfterVisibility);
+    };
   }, []);
   useEffect(() => gameAudio.setMode(snap.state), [snap.state]);
   useEffect(() => {
@@ -1482,7 +1499,10 @@ export function App() {
             enabled={soundEnabled}
             volume={soundVolume}
             open={showVolume}
-            onToggle={() => setShowVolume((visible) => !visible)}
+            onToggle={() => {
+              void gameAudio.unlock();
+              setShowVolume((visible) => !visible);
+            }}
           />
         </nav>
       )}
@@ -1609,7 +1629,10 @@ export function App() {
                 enabled={soundEnabled}
                 volume={soundVolume}
                 open={showVolume}
-                onToggle={() => setShowVolume((visible) => !visible)}
+                onToggle={() => {
+                  void gameAudio.unlock();
+                  setShowVolume((visible) => !visible);
+                }}
               />
             </nav>
           )}

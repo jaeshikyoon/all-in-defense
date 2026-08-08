@@ -19,6 +19,11 @@ const loadAudioVolume = () => {
 
 const safeFrequency = (value: number) => Math.max(30, Math.min(12_000, value));
 
+type AudioContextWindow = Window & {
+  AudioContext?: typeof AudioContext;
+  webkitAudioContext?: typeof AudioContext;
+};
+
 class GameAudioManager {
   private context: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -55,32 +60,75 @@ class GameAudioManager {
     );
   }
 
+  private createContext() {
+    const audioWindow = window as AudioContextWindow;
+    const AudioContextConstructor =
+      audioWindow.AudioContext ?? audioWindow.webkitAudioContext;
+    if (!AudioContextConstructor) return null;
+
+    const context = new AudioContextConstructor();
+    const master = context.createGain();
+    const compressor = context.createDynamicsCompressor();
+    const sfx = context.createGain();
+    const music = context.createGain();
+    master.gain.value = this.enabled ? 0.95 * this.volume : 0;
+    sfx.gain.value = 1.45;
+    music.gain.value = 0.52;
+    compressor.threshold.value = -16;
+    compressor.knee.value = 18;
+    compressor.ratio.value = 5;
+    compressor.attack.value = 0.004;
+    compressor.release.value = 0.16;
+    sfx.connect(master);
+    music.connect(master);
+    master.connect(compressor).connect(context.destination);
+    this.context = context;
+    this.master = master;
+    this.compressor = compressor;
+    this.sfxBus = sfx;
+    this.musicBus = music;
+    return context;
+  }
+
+  /**
+   * Starting a silent source inside the user's touch/click handler is required
+   * by some iOS Safari versions even after AudioContext.resume() is requested.
+   */
+  private primeContext(context: AudioContext) {
+    const source = context.createBufferSource();
+    source.buffer = context.createBuffer(1, 1, context.sampleRate);
+    source.connect(context.destination);
+    source.start(0);
+  }
+
   async unlock() {
-    if (!this.context) {
-      const context = new AudioContext();
-      const master = context.createGain();
-      const compressor = context.createDynamicsCompressor();
-      const sfx = context.createGain();
-      const music = context.createGain();
-      master.gain.value = this.enabled ? 0.95 * this.volume : 0;
-      sfx.gain.value = 1.45;
-      music.gain.value = 0.52;
-      compressor.threshold.value = -16;
-      compressor.knee.value = 18;
-      compressor.ratio.value = 5;
-      compressor.attack.value = 0.004;
-      compressor.release.value = 0.16;
-      sfx.connect(master);
-      music.connect(master);
-      master.connect(compressor).connect(context.destination);
-      this.context = context;
-      this.master = master;
-      this.compressor = compressor;
-      this.sfxBus = sfx;
-      this.musicBus = music;
+    try {
+      let context = this.context;
+      if (context?.state === "closed") {
+        this.context = null;
+        this.master = null;
+        this.compressor = null;
+        this.sfxBus = null;
+        this.musicBus = null;
+        context = null;
+      }
+      context ??= this.createContext();
+      if (!context) return false;
+
+      // Keep this before the first await so it runs in the original gesture.
+      this.primeContext(context);
+      // iOS may expose a non-standard `interrupted` state. Resume every state
+      // except running/closed instead of checking only for `suspended`.
+      if ((context.state as string) !== "running") await context.resume();
+      if (context.state !== "running") return false;
+      this.applyMasterVolume();
+      if (this.enabled) this.startMusic();
+      return true;
+    } catch {
+      // A later user gesture will retry. Mobile browsers can reject resume()
+      // when the page is not visible or the gesture was not accepted.
+      return false;
     }
-    if (this.context.state === "suspended") await this.context.resume();
-    if (this.enabled) this.startMusic();
   }
 
   toggle() {
@@ -95,8 +143,8 @@ class GameAudioManager {
     this.volume = clampAudioVolume(value);
     if (this.volume > 0 && !this.enabled) {
       this.enabled = true;
-      void this.unlock();
     }
+    if (this.volume > 0) void this.unlock();
     if (typeof window !== "undefined") {
       try {
         window.localStorage.setItem(VOLUME_STORAGE_KEY, String(this.volume));
