@@ -25,7 +25,7 @@ import {
 } from "./battlefieldBorder";
 import { gameAudio } from "./AudioManager";
 import { publicAssetUrl } from "./assets";
-import type { GameEngine, MapObject } from "./Engine";
+import type { GameEngine, MapObject, Snapshot } from "./Engine";
 
 const iso = (x: number, y: number) => ({ x: (x - y) * 32, y: (x + y) * 16 });
 
@@ -469,7 +469,8 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
     lastScreenSize = `${app.screen.width}:${app.screen.height}`,
     viewWidth = app.screen.width,
     viewHeight = app.screen.height,
-    zoomLevel = 1;
+    zoomLevel = 1,
+    focusedFirstEntrance = false;
   const project = (x: number, y: number) =>
     engine.state === "builder" ? { x: x * 32, y: y * 32 } : iso(x, y);
   const viewScale = (mode = lastProjection) =>
@@ -522,6 +523,28 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
       screenX - focusX * nextScale,
       screenY - focusY * nextScale,
     );
+  };
+  const focusFirstActiveEntrance = (snap: Snapshot) => {
+    const mobileViewport =
+      window.matchMedia("(pointer: coarse)").matches ||
+      (app.screen.width <= 1100 && app.screen.height <= 500);
+    if (!mobileViewport || focusedFirstEntrance || snap.state !== "deploy")
+      return;
+    const routeIndex = snap.routes.findIndex(
+        (_, index) => (snap.routeStartPhases[index] ?? 1) <= snap.phase + 1,
+      ),
+      entrance = snap.routes[Math.max(0, routeIndex)]?.[0];
+    if (!entrance) return;
+
+    const baseScale = viewScale("iso"),
+      scale = Math.min(baseScale * 2.3, baseScale * 1.6),
+      point = iso(entrance[0], entrance[1]),
+      screenX = app.screen.width * 0.5,
+      screenY = Math.max(76, app.screen.height * 0.5);
+    zoomLevel = scale / baseScale;
+    world.scale.set(scale);
+    world.position.set(screenX - point.x * scale, screenY - point.y * scale);
+    focusedFirstEntrance = true;
   };
   const onWheel = (event: WheelEvent) => {
     event.preventDefault();
@@ -923,6 +946,7 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
       mapSize = `${snap.mapWidth}:${snap.mapHeight}`,
       screenSize = `${app.screen.width}:${app.screen.height}`,
       projection = snap.state === "builder" ? "ortho" : "iso";
+    focusFirstActiveEntrance(snap);
     if (projection !== lastProjection) {
       lastProjection = projection;
       zoomLevel = 1;
