@@ -5780,3 +5780,111 @@ button.close.game-button-icon,
     min-height: 40px;
   }
 }
+
+/* Poker unit archive: all ten hand rewards stay visible without scrolling. */
+.poker-guide {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 14px;
+  overflow: hidden;
+}
+
+.poker-guide > header {
+  min-height: 34px;
+  margin: 0 0 7px;
+}
+
+.poker-guide-grid {
+  min-height: 0;
+  height: 100%;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.poker-guide-grid article {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  padding: 5px 5px 6px;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.poker-guide-grid article > span {
+  top: 4px;
+  right: 4px;
+  padding: 2px 5px;
+}
+
+.poker-guide-grid img {
+  flex: 0 1 auto;
+  width: clamp(44px, 11dvh, 78px);
+  height: clamp(44px, 11dvh, 78px);
+}
+
+.poker-guide-grid strong,
+.poker-guide-grid b,
+.poker-guide-grid small {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  line-height: 1.15;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.poker-guide-grid b {
+  margin-top: 2px;
+}
+
+.poker-guide-grid small {
+  margin-top: 2px;
+}
+
+@media (max-width: 900px) and (orientation: landscape),
+       (max-height: 500px) and (orientation: landscape) {
+  .poker-guide {
+    inset: 7px;
+    padding:
+      max(10px, env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
+  }
+
+  .poker-guide > header {
+    min-height: 28px;
+    margin-bottom: 4px;
+  }
+
+  .poker-guide > header b {
+    font-size: 14px;
+  }
+
+  .poker-guide > header button {
+    width: 32px;
+    min-width: 32px;
+    height: 28px;
+    min-height: 28px;
+  }
+
+  .poker-guide-grid {
+    gap: 4px;
+  }
+
+  .poker-guide-grid article {
+    padding: 3px 3px 4px;
+    border-radius: 6px;
+  }
+
+  .poker-guide-grid img {
+    width: clamp(38px, 10.5dvh, 62px);
+    height: clamp(38px, 10.5dvh, 62px);
+  }
+
+  .poker-guide-grid article > span {
+    padding: 1px 3px;
+  }
+}
