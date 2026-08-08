@@ -15,6 +15,7 @@ import {
   ENEMIES,
   ENEMY_ASSET_FILES,
   ENEMY_PHASE_INFO,
+  getMapAssetFootprint,
   getUnitDamage,
   PAYOUT,
   STRONG_DAMAGE_MULTIPLIERS,
@@ -723,6 +724,7 @@ function BuildControls({
             : item.category === "terrain"
               ? "terrain"
               : "build";
+        const [footprintWidth, footprintHeight] = getMapAssetFootprint(kind);
         return (
           <button
             key={kind}
@@ -734,6 +736,9 @@ function BuildControls({
           >
             <img src={publicAssetUrl(`assets/${folder}/${kind}.png`)} alt="" />
             <span>{item.name}</span>
+            <small className="asset-footprint">
+              {footprintWidth}×{footprintHeight} GRID
+            </small>
           </button>
         );
       })}

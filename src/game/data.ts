@@ -292,6 +292,8 @@ export const BUILDINGS: Record<
     scale: number;
     radius: number;
     category: "structure" | "terrain" | "floor";
+    footprint?: readonly [width: number, height: number];
+    builderScale?: number;
   }
 > = {
   command_tent: {
@@ -299,33 +301,64 @@ export const BUILDINGS: Record<
     scale: 0.34,
     radius: 2.8,
     category: "structure",
+    footprint: [2, 2],
+    builderScale: 0.58,
   },
   watchtower: {
     name: "감시탑",
     scale: 0.34,
     radius: 2.2,
     category: "structure",
+    footprint: [1, 1],
+    builderScale: 0.3,
   },
   sandbags: {
     name: "모래주머니",
     scale: 0.31,
     radius: 2.3,
     category: "structure",
+    footprint: [2, 1],
+    builderScale: 0.52,
   },
-  radar: { name: "레이더", scale: 0.33, radius: 2.5, category: "structure" },
-  generator: { name: "발전기", scale: 0.3, radius: 2.1, category: "structure" },
+  radar: {
+    name: "레이더",
+    scale: 0.33,
+    radius: 2.5,
+    category: "structure",
+    footprint: [2, 2],
+    builderScale: 0.58,
+  },
+  generator: {
+    name: "발전기",
+    scale: 0.3,
+    radius: 2.1,
+    category: "structure",
+    footprint: [2, 2],
+    builderScale: 0.56,
+  },
   medic_station: {
     name: "의무소",
     scale: 0.32,
     radius: 2.5,
     category: "structure",
+    footprint: [2, 2],
+    builderScale: 0.54,
   },
-  antenna: { name: "통신탑", scale: 0.34, radius: 2.1, category: "structure" },
+  antenna: {
+    name: "통신탑",
+    scale: 0.34,
+    radius: 2.1,
+    category: "structure",
+    footprint: [1, 1],
+    builderScale: 0.28,
+  },
   lamp_post: {
     name: "조명탑",
     scale: 0.32,
     radius: 1.7,
     category: "structure",
+    footprint: [1, 1],
+    builderScale: 0.28,
   },
   rock_outcrop: {
     name: "바위 지대",
@@ -403,6 +436,14 @@ export const BUILDINGS: Record<
     radius: 0,
     category: "floor",
   },
+};
+
+const SINGLE_CELL_FOOTPRINT = [1, 1] as const;
+export const getMapAssetFootprint = (kind: MapAssetKind) =>
+  BUILDINGS[kind].footprint ?? SINGLE_CELL_FOOTPRINT;
+export const getBuilderAssetScale = (kind: MapAssetKind) => {
+  const spec = BUILDINGS[kind];
+  return spec.builderScale ?? (spec.category === "terrain" ? 0.28 : spec.scale);
 };
 
 export const LOOT_MILESTONES = [

@@ -11,6 +11,8 @@ import {
   BUILDINGS,
   ENEMIES,
   ENEMY_ASSET_FILES,
+  getBuilderAssetScale,
+  getMapAssetFootprint,
   UNIT_ASSET_FILES,
   UNITS,
   type EnemyKind,
@@ -569,6 +571,41 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
         app.screen.height / 2,
       );
   };
+  const layoutBuildSprite = (
+    sprite: Sprite,
+    kind: MapAssetKind,
+    p: { x: number; y: number },
+    ortho: boolean,
+  ) => {
+    const spec = BUILDINGS[kind],
+      floor = spec.category === "floor";
+    if (floor) {
+      sprite.anchor.set(0.5);
+      sprite.position.set(p.x, p.y);
+      sprite.rotation = ortho ? Math.PI / 4 : 0;
+      if (ortho)
+        sprite.scale.set(spec.scale / Math.sqrt(2), spec.scale * Math.sqrt(2));
+      else sprite.scale.set(spec.scale);
+      return;
+    }
+    if (ortho) {
+      const [, footprintHeight] = getMapAssetFootprint(kind);
+      if (spec.category === "terrain") {
+        sprite.anchor.set(0.5, 0.6);
+        sprite.position.set(p.x, p.y);
+      } else {
+        sprite.anchor.set(0.5, 0.97);
+        sprite.position.set(p.x, p.y + footprintHeight * 32 - 4);
+      }
+      sprite.rotation = 0;
+      sprite.scale.set(getBuilderAssetScale(kind));
+      return;
+    }
+    sprite.anchor.set(0.5, 0.97);
+    sprite.position.set(p.x, p.y + 8);
+    sprite.rotation = 0;
+    sprite.scale.set(spec.scale);
+  };
   const syncBuildObject = (object: MapObject) => {
     const spec = BUILDINGS[object.kind],
       floor = spec.category === "floor",
@@ -580,17 +617,12 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
     if (!sprite) {
       sprite = new Sprite(buildTextures[object.kind]);
       sprite.cullable = true;
-      sprite.anchor.set(0.5, floor ? 0.5 : 0.97);
       (spec.category === "structure" ? spriteLayer : terrainLayer).addChild(
         sprite,
       );
       buildSprites.set(object.id, sprite);
     } else sprite.texture = buildTextures[object.kind];
-    sprite.position.set(p.x, p.y + (floor ? 0 : 8));
-    sprite.rotation = floor && ortho ? Math.PI / 4 : 0;
-    if (floor && ortho)
-      sprite.scale.set(spec.scale / Math.sqrt(8), spec.scale / Math.sqrt(2));
-    else sprite.scale.set(spec.scale);
+    layoutBuildSprite(sprite, object.kind, p, ortho);
     sprite.zIndex = floor ? -100000 + p.y : p.y;
     sprite.tint = 0xffffff;
   };
@@ -1322,6 +1354,7 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
         hover && engine.nearestValidBuildCell(hover.x, hover.y, kind);
       if (target) {
         const floor = spec.category === "floor",
+          [footprintWidth, footprintHeight] = getMapAssetFootprint(kind),
           p = floor
             ? project(target.x + 1, target.y + 1)
             : project(target.x, target.y);
@@ -1330,27 +1363,29 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
             .rect(p.x - 32, p.y - 32, 64, 64)
             .fill({ color: 0x47c9ff, alpha: 0.13 })
             .stroke({ color: 0x7ce7ff, width: 3 });
-        else
+        else {
+          const footprintCorner = project(
+            target.x - footprintWidth,
+            target.y - footprintHeight,
+          );
           actors
-            .ellipse(p.x, p.y + 3, 31, 15)
+            .rect(
+              footprintCorner.x,
+              footprintCorner.y,
+              footprintWidth * 64,
+              footprintHeight * 64,
+            )
             .fill({ color: 0x47c9ff, alpha: 0.18 })
             .stroke({ color: 0x7ce7ff, width: 3 });
+        }
         if (!buildGhost || buildGhost.texture !== buildTextures[kind]) {
           buildGhost?.destroy();
           buildGhost = new Sprite(buildTextures[kind]);
-          buildGhost.anchor.set(0.5, floor ? 0.5 : 0.97);
           buildGhost.alpha = 0.7;
           (floor ? terrainLayer : spriteLayer).addChild(buildGhost);
         }
         buildGhost.visible = true;
-        buildGhost.position.set(p.x, p.y + (floor ? 0 : 8));
-        buildGhost.rotation = floor ? Math.PI / 4 : 0;
-        if (floor)
-          buildGhost.scale.set(
-            spec.scale / Math.sqrt(8),
-            spec.scale / Math.sqrt(2),
-          );
-        else buildGhost.scale.set(spec.scale);
+        layoutBuildSprite(buildGhost, kind, p, true);
         buildGhost.zIndex = floor ? -99999 : p.y + 1;
       }
     }
@@ -1384,6 +1419,7 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
       const object = engine.mapObjectAt(hover.x, hover.y);
       if (object) {
         const floor = BUILDINGS[object.kind].category === "floor",
+          [footprintWidth, footprintHeight] = getMapAssetFootprint(object.kind),
           p = floor
             ? project(object.x + 1, object.y + 1)
             : project(object.x, object.y),
@@ -1392,8 +1428,19 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
           eraseHighlighted = sprite;
           sprite.tint = 0xff7070;
         }
+        const footprintCorner = floor
+          ? { x: p.x - 32, y: p.y - 32 }
+          : project(
+              object.x - footprintWidth,
+              object.y - footprintHeight,
+            );
         actors
-          .ellipse(p.x, p.y + 3, floor ? 44 : 31, floor ? 22 : 15)
+          .rect(
+            footprintCorner.x,
+            footprintCorner.y,
+            footprintWidth * 64,
+            footprintHeight * 64,
+          )
           .fill({ color: 0xff405c, alpha: 0.18 })
           .stroke({ color: 0xff7080, width: 3 });
       }

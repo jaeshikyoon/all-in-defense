@@ -763,9 +763,38 @@ describe("map builder invariants", () => {
     const placed = game.mapObjects.at(-1)!;
     game.chooseBuildTool("dirt_mound");
     game.clickWorld(26, 12);
-    expect(game.assetCells.get(`${placed.x}:${placed.y}`)?.kind).toBe(
+    const [occupiedCell] = game.assetFootprintCells(
+      placed.x,
+      placed.y,
+      placed.kind,
+    );
+    expect(game.assetCells.get(`${occupiedCell.x}:${occupiedCell.y}`)?.kind).toBe(
       "grass_patch",
     );
+  });
+
+  it("snaps multi-cell buildings to grid footprints and reserves every cell", () => {
+    const game = new GameEngine();
+    game.enterBuilder();
+    game.chooseBuildTool("command_tent");
+    game.clickWorld(48, 44);
+    const placed = game.mapObjects.at(-1)!;
+    const cells = game.assetFootprintCells(
+      placed.x,
+      placed.y,
+      placed.kind,
+    );
+
+    expect(placed.x % 2).toBe(0);
+    expect(placed.y % 2).toBe(0);
+    expect(cells).toHaveLength(4);
+    expect(
+      cells.every(
+        (cell) => game.assetCells.get(`${cell.x}:${cell.y}`)?.id === placed.id,
+      ),
+    ).toBe(true);
+    expect(game.validBuildCell(cells[0].x + 1, cells[0].y + 1, "grass_patch"))
+      .toBe(false);
   });
 
   it("normalizes legacy overlapping map data", () => {

@@ -3,6 +3,7 @@ import {
   CRYO_SLOWED_SPEED_MULTIPLIER,
   ENEMIES,
   ENEMY_PHASE_INFO,
+  getMapAssetFootprint,
   getStrongDamageMultiplier,
   getUnitDamage,
   GROUPS,
@@ -561,21 +562,37 @@ export class GameEngine {
   cellKey(x: number, y: number) {
     return `${x}:${y}`;
   }
+  assetFootprintCells(x: number, y: number, kind: MapAssetKind) {
+    const [width, height] = getMapAssetFootprint(kind),
+      left = x - width,
+      top = y - height,
+      cells: { x: number; y: number }[] = [];
+    for (let column = 0; column < width; column++)
+      for (let row = 0; row < height; row++)
+        cells.push({ x: left + column * 2, y: top + row * 2 });
+    return cells;
+  }
   normalizeMapObjects() {
     const floors = new Map<string, MapObject>(),
-      assets = new Map<string, MapObject>();
+      assets = new Map<string, MapObject>(),
+      acceptedAssets: MapObject[] = [];
     for (const object of this.mapObjects) {
       const p = this.snapAssetPoint(object.x, object.y, object.kind);
       object.x = p.x;
       object.y = p.y;
-      (BUILDINGS[object.kind].category === "floor" ? floors : assets).set(
-        this.cellKey(p.x, p.y),
-        object,
-      );
+      if (BUILDINGS[object.kind].category === "floor") {
+        floors.set(this.cellKey(p.x, p.y), object);
+        continue;
+      }
+      const cells = this.assetFootprintCells(p.x, p.y, object.kind);
+      if (cells.some((cell) => assets.has(this.cellKey(cell.x, cell.y))))
+        continue;
+      for (const cell of cells) assets.set(this.cellKey(cell.x, cell.y), object);
+      acceptedAssets.push(object);
     }
     this.floorCells = floors;
     this.assetCells = assets;
-    this.mapObjects = [...floors.values(), ...assets.values()];
+    this.mapObjects = [...floors.values(), ...acceptedAssets];
     this.mapById = new Map(this.mapObjects.map((o) => [o.id, o]));
     this.markMapReset();
   }
@@ -584,10 +601,15 @@ export class GameEngine {
     this.assetCells.clear();
     this.mapById.clear();
     for (const object of this.mapObjects) {
-      (BUILDINGS[object.kind].category === "floor"
-        ? this.floorCells
-        : this.assetCells
-      ).set(this.cellKey(object.x, object.y), object);
+      if (BUILDINGS[object.kind].category === "floor")
+        this.floorCells.set(this.cellKey(object.x, object.y), object);
+      else
+        for (const cell of this.assetFootprintCells(
+          object.x,
+          object.y,
+          object.kind,
+        ))
+          this.assetCells.set(this.cellKey(cell.x, cell.y), object);
       this.mapById.set(object.id, object);
     }
   }
@@ -926,7 +948,8 @@ export class GameEngine {
     this.emit(true);
   }
   snapAssetPoint(x: number, y: number, kind: MapAssetKind) {
-    const floor = BUILDINGS[kind].category === "floor";
+    const floor = BUILDINGS[kind].category === "floor",
+      [width, height] = getMapAssetFootprint(kind);
     return floor
       ? {
           x: Math.max(0, Math.min(this.mapWidth - 2, Math.floor(x / 2) * 2)),
@@ -934,12 +957,18 @@ export class GameEngine {
         }
       : {
           x: Math.max(
-            1,
-            Math.min(this.mapWidth - 1, Math.floor(x / 2) * 2 + 1),
+            width,
+            Math.min(
+              this.mapWidth - width,
+              Math.floor(x / 2) * 2 + (width % 2),
+            ),
           ),
           y: Math.max(
-            1,
-            Math.min(this.mapHeight - 1, Math.floor(y / 2) * 2 + 1),
+            height,
+            Math.min(
+              this.mapHeight - height,
+              Math.floor(y / 2) * 2 + (height % 2),
+            ),
           ),
         };
   }
@@ -955,7 +984,9 @@ export class GameEngine {
       y < 1 ||
       x >= this.mapWidth ||
       y >= this.mapHeight ||
-      this.assetCells.has(this.cellKey(x, y))
+      this.assetFootprintCells(x, y, kind).some((cell) =>
+        this.assetCells.has(this.cellKey(cell.x, cell.y)),
+      )
     )
       return false;
     if (
@@ -975,18 +1006,13 @@ export class GameEngine {
     return this.validBuildCell(base.x, base.y, kind) ? base : null;
   }
   mapObjectAt(x: number, y: number) {
-    const assetX = Math.max(
-        1,
-        Math.min(this.mapWidth - 1, Math.floor(x / 2) * 2 + 1),
+    const floorX = Math.max(
+        0,
+        Math.min(this.mapWidth - 2, Math.floor(x / 2) * 2),
       ),
-      assetY = Math.max(
-        1,
-        Math.min(this.mapHeight - 1, Math.floor(y / 2) * 2 + 1),
-      ),
-      floorX = Math.max(0, Math.min(this.mapWidth - 2, Math.floor(x / 2) * 2)),
       floorY = Math.max(0, Math.min(this.mapHeight - 2, Math.floor(y / 2) * 2));
     return (
-      this.assetCells.get(this.cellKey(assetX, assetY)) ??
+      this.assetCells.get(this.cellKey(floorX, floorY)) ??
       this.floorCells.get(this.cellKey(floorX, floorY))
     );
   }
@@ -1017,7 +1043,15 @@ export class GameEngine {
           BUILDINGS[target.kind].category === "floor"
             ? this.floorCells
             : this.assetCells;
-        cells.delete(this.cellKey(target.x, target.y));
+        if (BUILDINGS[target.kind].category === "floor")
+          cells.delete(this.cellKey(target.x, target.y));
+        else
+          for (const cell of this.assetFootprintCells(
+            target.x,
+            target.y,
+            target.kind,
+          ))
+            cells.delete(this.cellKey(cell.x, cell.y));
         this.mapById.delete(target.id);
         this.mapDirty = true;
         this.markMapRemoved(target.id);
@@ -1051,7 +1085,8 @@ export class GameEngine {
     if (this.validBuildCell(target.x, target.y, kind)) {
       const object = { id: this.nextMapId++, kind, x: target.x, y: target.y };
       this.mapObjects.push(object);
-      this.assetCells.set(this.cellKey(target.x, target.y), object);
+      for (const cell of this.assetFootprintCells(target.x, target.y, kind))
+        this.assetCells.set(this.cellKey(cell.x, cell.y), object);
       this.mapById.set(object.id, object);
       this.mapDirty = true;
       this.markMapChanged(object);

@@ -2221,6 +2221,19 @@ button {
   font-size: var(--game-font-min);
   color: #b8cad0;
 }
+.build-panel > .asset-grid .asset-footprint {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 2px 5px;
+  border: 1px solid #5ddfc477;
+  border-radius: 999px;
+  background: #082027dd;
+  color: #8ff4dc;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.2;
+}
 .build-panel > .path-editor {
   display: block;
   padding: 14px;
