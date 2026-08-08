@@ -836,6 +836,22 @@ describe("map builder invariants", () => {
       .toBe(false);
   });
 
+  it("snaps a neighboring command tent to the next complete footprint", () => {
+    const game = new GameEngine();
+    game.enterBuilder();
+    game.chooseBuildTool("command_tent");
+    game.clickWorld(4, 44);
+    expect(game.nearestValidBuildCell(6, 44, "command_tent")).toEqual({
+      x: 8,
+      y: 44,
+    });
+    game.clickWorld(6, 44);
+    expect(
+      game.mapObjects.filter((object) => object.kind === "command_tent"),
+    ).toHaveLength(3);
+    expect(game.assetCells.get("6:44")?.kind).toBe("command_tent");
+  });
+
   it("normalizes legacy overlapping map data", () => {
     const game = new GameEngine();
     game.mapObjects.push(

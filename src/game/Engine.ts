@@ -1055,8 +1055,41 @@ export class GameEngine {
       replacedAsset = this.assetCells.get(
         this.cellKey(clickedCellX, clickedCellY),
       );
-    return this.validBuildCell(base.x, base.y, kind, replacedAsset?.id)
-      ? base
+    if (this.validBuildCell(base.x, base.y, kind, replacedAsset?.id))
+      return base;
+    if (replacedAsset) return null;
+
+    // A multi-cell asset can be clicked one cell beside an occupied footprint.
+    // Search nearby grid anchors so an adjacent placement snaps to the next
+    // complete footprint instead of appearing unavailable.
+    const candidates: { x: number; y: number; distance: number }[] = [];
+    for (let offsetX = -3; offsetX <= 3; offsetX++)
+      for (let offsetY = -3; offsetY <= 3; offsetY++) {
+        if (offsetX === 0 && offsetY === 0) continue;
+        const candidate = this.snapAssetPoint(
+          base.x + offsetX * 2,
+          base.y + offsetY * 2,
+          kind,
+        );
+        if (
+          (candidate.x === base.x && candidate.y === base.y) ||
+          !this.validBuildCell(candidate.x, candidate.y, kind)
+        )
+          continue;
+        const distance = Math.hypot(
+          candidate.x - base.x,
+          candidate.y - base.y,
+        );
+        if (
+          !candidates.some(
+            (entry) => entry.x === candidate.x && entry.y === candidate.y,
+          )
+        )
+          candidates.push({ ...candidate, distance });
+      }
+    candidates.sort((a, b) => a.distance - b.distance);
+    return candidates[0]
+      ? { x: candidates[0].x, y: candidates[0].y }
       : null;
   }
   mapObjectAt(x: number, y: number) {
@@ -1114,8 +1147,9 @@ export class GameEngine {
       return;
     }
     const kind = this.buildTool,
-      target = this.snapAssetPoint(x, y, kind),
-      key = `${kind}:${target.x}:${target.y}`;
+      target = this.nearestValidBuildCell(x, y, kind);
+    if (!target) return;
+    const key = `${kind}:${target.x}:${target.y}`;
     if (key === this.lastPaintKey) return;
     this.lastPaintKey = key;
     if (BUILDINGS[kind].category === "floor") {
