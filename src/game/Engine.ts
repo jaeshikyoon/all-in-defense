@@ -1453,7 +1453,14 @@ export class GameEngine {
     this.setTimeScale(this.timeScale === 1 ? 2 : this.timeScale === 2 ? 4 : 1);
   }
   advance(realDt: number) {
-    this.update(realDt * (this.state === "running" ? this.timeScale : 1));
+    const scaledDt = realDt * (this.state === "running" ? this.timeScale : 1),
+      fixedStep = 1 / 60;
+    let remaining = Math.max(0, scaledDt);
+    while (remaining > 0) {
+      const step = Math.min(fixedStep, remaining);
+      this.update(step);
+      remaining -= step;
+    }
   }
   setMessage(text: string, seconds = 2.5) {
     this.message = text;

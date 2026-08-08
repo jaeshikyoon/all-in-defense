@@ -152,8 +152,8 @@ describe("poker defense loop", () => {
     game.toggleTimeScale();
     expect(game.getSnapshot().timeScale).toBe(4);
     game.advance(1);
-    expect(game.elapsed).toBe(4);
-    expect(game.phaseElapsed).toBe(4);
+    expect(game.elapsed).toBeCloseTo(4, 8);
+    expect(game.phaseElapsed).toBeCloseTo(4, 8);
     game.toggleTimeScale();
     expect(game.getSnapshot().timeScale).toBe(1);
 
