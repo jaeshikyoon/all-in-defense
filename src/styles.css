@@ -4339,3 +4339,361 @@ button.close.game-button-icon,
   0%, 100% { transform: rotate(0deg); }
   45%, 65% { transform: rotate(90deg); }
 }
+
+/* Compact mobile composition: prioritize the board over explanatory chrome. */
+@media (max-width: 900px) and (orientation: landscape),
+       (max-height: 500px) and (orientation: landscape) {
+  :root {
+    --mobile-hud-height: 42px;
+    --mobile-touch: 38px;
+  }
+
+  /* Home: battlefield is a compact picker; the three destinations are primary. */
+  .intro-card {
+    display: grid;
+    grid-template-rows: auto auto minmax(100px, 1fr);
+    gap: 5px;
+    min-height: calc(100dvh - 12px);
+    height: calc(100dvh - 12px);
+    padding: 5px 9px 7px;
+  }
+
+  .main-game-logo {
+    width: min(580px, 72%);
+    height: clamp(46px, 15dvh, 62px);
+    margin: 0 auto;
+  }
+
+  .intro-card .map-library {
+    padding: 5px 7px;
+    border-radius: 7px;
+  }
+
+  .map-library-heading {
+    min-height: 20px;
+    margin-bottom: 3px;
+  }
+
+  .map-library-heading b {
+    font-size: 12px;
+  }
+
+  .map-library-heading strong {
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+
+  .map-carousel {
+    grid-template-columns: 30px minmax(0, 1fr) 30px;
+    gap: 4px;
+    height: 51px;
+  }
+
+  .map-carousel-arrow.game-button {
+    width: 30px;
+    min-width: 30px;
+    min-height: 48px;
+    padding: 0;
+    font-size: 19px;
+  }
+
+  .map-card-row {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .map-card {
+    display: grid;
+    grid-template-columns: 66px minmax(0, 1fr);
+    flex: 0 0 150px;
+    min-width: 150px;
+    height: 49px;
+    padding: 3px;
+  }
+
+  .map-preview {
+    width: 66px;
+    height: 41px;
+  }
+
+  .map-card > span {
+    min-width: 0;
+    justify-content: center;
+    padding: 2px 5px;
+  }
+
+  .map-card b {
+    font-size: 11px;
+  }
+
+  .map-card small {
+    font-size: 10px;
+  }
+
+  .map-carousel-count {
+    display: none;
+  }
+
+  .home-image-actions {
+    min-height: 0;
+    height: 100%;
+    gap: 8px;
+    margin-top: 0;
+  }
+
+  .home-image-action {
+    min-height: 96px;
+    height: 100%;
+  }
+
+  .home-image-action span {
+    bottom: 10px;
+    font-size: clamp(14px, 2.2vw, 18px);
+  }
+
+  /* Battle: one thin status strip, with the board owning the viewport. */
+  .game-shell > .top-hud {
+    height: var(--mobile-hud-height);
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    gap: 2px;
+    padding: 2px 4px;
+  }
+
+  .game-shell > .top-hud .brand {
+    width: 28px;
+    min-width: 28px;
+  }
+
+  .game-shell > .top-hud .brand-mark {
+    width: 27px;
+    height: 34px;
+    font-size: 17px;
+  }
+
+  .game-shell > .top-hud .metrics > div {
+    height: 35px;
+    padding: 1px 2px;
+    border-radius: 4px;
+  }
+
+  .game-shell > .top-hud .metrics span {
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .game-shell > .top-hud .metrics b {
+    font-size: 13px;
+    line-height: 1.1;
+  }
+
+  .game-shell > .top-hud .metrics small {
+    font-size: 8px;
+  }
+
+  .gate-meter {
+    height: 2px;
+    margin-top: 1px;
+  }
+
+  .hud-actions {
+    height: 36px;
+    gap: 2px;
+  }
+
+  .hud-actions > button,
+  .hud-actions > .sound-control,
+  .hud-actions .sound {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+  }
+
+  .hud-actions > button > span,
+  .hud-actions > .sound-control > .sound span {
+    font-size: 14px;
+  }
+
+  .right-stack,
+  .group-banner,
+  .tutorial-tip {
+    display: none;
+  }
+
+  .toast {
+    top: calc(var(--mobile-hud-height) + 9px);
+    max-width: 52vw;
+    padding: 5px 9px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .deploy-guide {
+    bottom: max(7px, env(safe-area-inset-bottom));
+    gap: 5px;
+    padding: 5px 8px;
+    border-radius: 6px;
+  }
+
+  .deploy-guide span,
+  .deploy-guide strong {
+    display: none;
+  }
+
+  .deploy-guide b {
+    font-size: 11px;
+  }
+
+  .phase-ready {
+    min-height: 42px;
+    padding: 3px 5px 3px 10px;
+    border-radius: 7px;
+  }
+
+  .phase-ready b {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .phase-ready .phase-start-cta {
+    min-width: 160px;
+    height: 38px;
+    min-height: 38px;
+    padding: 2px 12px;
+    border-width: 1px;
+  }
+
+  .phase-start-cta > span {
+    font-size: 13px;
+  }
+
+  .phase-start-cta > small {
+    display: none;
+  }
+
+  .zoom-controls {
+    min-height: 36px;
+  }
+
+  .zoom-controls button {
+    min-width: 36px;
+    min-height: 36px;
+    height: 36px;
+  }
+
+  .selection {
+    height: 48px;
+    width: min(390px, calc(100vw - 140px));
+    padding: 4px 6px;
+    gap: 6px;
+  }
+
+  .selection .portrait {
+    width: 38px;
+    height: 38px;
+  }
+
+  .selection small {
+    display: none;
+  }
+
+  .selection button {
+    height: 34px;
+    padding: 0 10px;
+  }
+
+  /* Poker is a true screen, not a floating desktop dialog. */
+  .modal-back.poker-back {
+    display: block;
+    padding: 0;
+    background: #061019;
+    backdrop-filter: none;
+  }
+
+  .poker-modal {
+    box-sizing: border-box;
+    display: flex;
+    width: 100vw;
+    height: 100dvh;
+    max-height: none;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(18px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom))
+      max(18px, env(safe-area-inset-left));
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .poker-modal::before {
+    inset: 3px;
+    border-width: 14px;
+    border-image-width: 14px;
+    filter: none;
+  }
+
+  .poker-modal > .eyebrow {
+    position: absolute;
+    top: max(11px, env(safe-area-inset-top));
+    left: max(22px, env(safe-area-inset-left));
+    font-size: 10px;
+  }
+
+  .poker-modal h2 {
+    margin: 0 0 6px;
+    font-size: 18px;
+  }
+
+  .poker-hand {
+    width: min(420px, 64vw);
+    max-width: 64vw;
+    gap: 6px;
+  }
+
+  .poker-hand button {
+    width: 100%;
+    max-height: 92px;
+  }
+
+  .poker-result {
+    min-height: 25px;
+    margin: 5px 0 4px;
+  }
+
+  .reward-row {
+    min-height: 38px;
+  }
+
+  .reward-row > div {
+    max-width: 150px;
+    min-height: 38px;
+  }
+
+  .poker-footer-actions {
+    width: min(500px, 76vw);
+    margin-top: 6px;
+  }
+
+  .poker-footer-actions .poker-action {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 40px;
+  }
+
+  .poker-footer-actions .poker-guide-toggle {
+    flex: 0 0 108px;
+    min-width: 108px;
+    min-height: 40px;
+  }
+
+  .poker-guide {
+    position: fixed;
+    inset: 0;
+    border-radius: 0;
+  }
+}
