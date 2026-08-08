@@ -1639,19 +1639,10 @@ export function App() {
               {snap.state === "running" && (
                 <button
                   className={
-                    snap.timeScale === 2 ? "speed-action active" : "speed-action"
+                    snap.timeScale > 1 ? "speed-action active" : "speed-action"
                   }
-                  title={
-                    snap.timeScale === 2
-                      ? "정상 속도로 전환"
-                      : "전투를 2배속으로 진행"
-                  }
-                  aria-label={
-                    snap.timeScale === 2
-                      ? "정상 속도로 전환"
-                      : "전투를 2배속으로 진행"
-                  }
-                  aria-pressed={snap.timeScale === 2}
+                  title={`현재 ${snap.timeScale}배속 · 눌러서 ${snap.timeScale === 1 ? 2 : snap.timeScale === 2 ? 4 : 1}배속으로 전환`}
+                  aria-label={`전투 속도 ${snap.timeScale}배속. 다음 속도로 전환`}
                   onClick={() => engine.toggleTimeScale()}
                 >
                   <span aria-hidden="true">{snap.timeScale}×</span>
