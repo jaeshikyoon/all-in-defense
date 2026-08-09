@@ -47,6 +47,7 @@ import {
   saveStoredMap,
   setCurrentMapId,
   validateMapData,
+  type BundledMap,
   type ScoreRecord,
   type StoredMap,
 } from "./game/storage";
@@ -79,20 +80,42 @@ const enemyOrder: EnemyKind[] = [
   "boss",
 ];
 
-const loadBundledDefaultMap = async (
+const bundledMapFiles = [
+  { id: "bundled-map-1", file: "내-전장-1.json", name: "내 전장 1" },
+  { id: "bundled-map-2", file: "내-전장-2.json", name: "내 전장 2" },
+  { id: "bundled-map-3", file: "내-전장-3.json", name: "내 전장 3" },
+  { id: "bundled-map-4", file: "내-전장-4.json", name: "내전장 4" },
+  { id: "bundled-map-5", file: "내-전장-5.json", name: "내 전장 5" },
+] as const;
+
+const loadBundledMaps = async (
   fallback: ReturnType<GameEngine["exportMapData"]>,
 ) => {
-  try {
-    const response = await fetch(
-      encodeURI(publicAssetUrl("maps/내-전장-5.json")),
-      { cache: "no-store" },
-    );
-    if (!response.ok) throw new Error(`Bundled map request failed: ${response.status}`);
-    return validateMapData(await response.json());
-  } catch {
-    // Keep offline/local development functional when the static map is absent.
-    return fallback;
-  }
+  const loaded = await Promise.all(
+    bundledMapFiles.map(async ({ id, file, name }): Promise<BundledMap | null> => {
+      try {
+        const response = await fetch(
+          encodeURI(publicAssetUrl(`maps/${file}`)),
+          { cache: "no-store" },
+        );
+        if (!response.ok) throw new Error(`Bundled map request failed: ${response.status}`);
+        const payload = (await response.json()) as { name?: unknown };
+        return {
+          id,
+          name: typeof payload.name === "string" ? payload.name : name,
+          data: validateMapData(payload),
+        };
+      } catch {
+        return null;
+      }
+    }),
+  );
+  const bundledMaps = loaded.filter((map): map is BundledMap => map !== null);
+  return {
+    bundledMaps,
+    defaultMap:
+      bundledMaps.find((map) => map.id === "bundled-map-5")?.data ?? fallback,
+  };
 };
 
 type GameButtonVariant = "primary" | "secondary" | "danger" | "icon" | "option";
@@ -1396,8 +1419,10 @@ export function App() {
   }, [showVolume]);
   useEffect(() => {
     let cancelled = false;
-    loadBundledDefaultMap(engine.exportMapData())
-      .then((defaultMap) => initializeMaps(defaultMap, "내 전장 5"))
+    loadBundledMaps(engine.exportMapData())
+      .then(({ defaultMap, bundledMaps }) =>
+        initializeMaps(defaultMap, "내 전장 5", bundledMaps),
+      )
       .then(async ({ maps: storedMaps, current }) => {
         if (cancelled) return;
         currentMapRef.current = current;

@@ -10,6 +10,12 @@ export type StoredMap = MapData & {
   updatedAt: number;
 };
 
+export type BundledMap = {
+  id: string;
+  name: string;
+  data: MapData;
+};
+
 export type ScoreRecord = {
   id: string;
   mapId: string;
@@ -166,8 +172,29 @@ export async function getCurrentMapId() {
 
 let initializationPromise: Promise<{ maps: StoredMap[]; current: StoredMap }> | null = null;
 
-async function initializeMapsInternal(fallback: MapData, fallbackName: string) {
+async function initializeMapsInternal(
+  fallback: MapData,
+  fallbackName: string,
+  bundledMaps: readonly BundledMap[],
+) {
   let maps = await listMaps();
+  if (bundledMaps.length) {
+    const existingIds = new Set(maps.map((map) => map.id));
+    const now = Date.now();
+    for (const [index, bundled] of bundledMaps.entries()) {
+      if (existingIds.has(bundled.id)) continue;
+      await saveStoredMap({
+        ...validateMapData(bundled.data),
+        id: bundled.id,
+        name: bundled.name,
+        schemaVersion: 1,
+        revision: 1,
+        createdAt: now + index,
+        updatedAt: now + index,
+      });
+    }
+    maps = await listMaps();
+  }
   if (!maps.length) {
     const now = Date.now();
     maps = [
@@ -188,8 +215,16 @@ async function initializeMapsInternal(fallback: MapData, fallbackName: string) {
   return { maps, current };
 }
 
-export function initializeMaps(fallback: MapData, fallbackName = "내 전장") {
-  initializationPromise ??= initializeMapsInternal(fallback, fallbackName);
+export function initializeMaps(
+  fallback: MapData,
+  fallbackName = "내 전장",
+  bundledMaps: readonly BundledMap[] = [],
+) {
+  initializationPromise ??= initializeMapsInternal(
+    fallback,
+    fallbackName,
+    bundledMaps,
+  );
   return initializationPromise;
 }
 
