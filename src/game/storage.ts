@@ -166,7 +166,7 @@ export async function getCurrentMapId() {
 
 let initializationPromise: Promise<{ maps: StoredMap[]; current: StoredMap }> | null = null;
 
-async function initializeMapsInternal(fallback: MapData) {
+async function initializeMapsInternal(fallback: MapData, fallbackName: string) {
   let maps = await listMaps();
   if (!maps.length) {
     const now = Date.now();
@@ -174,7 +174,7 @@ async function initializeMapsInternal(fallback: MapData) {
       await saveStoredMap({
         ...validateMapData(fallback),
         id: uuid(),
-        name: "내 전장",
+        name: fallbackName,
         schemaVersion: 1,
         revision: 1,
         createdAt: now,
@@ -188,8 +188,8 @@ async function initializeMapsInternal(fallback: MapData) {
   return { maps, current };
 }
 
-export function initializeMaps(fallback: MapData) {
-  initializationPromise ??= initializeMapsInternal(fallback);
+export function initializeMaps(fallback: MapData, fallbackName = "내 전장") {
+  initializationPromise ??= initializeMapsInternal(fallback, fallbackName);
   return initializationPromise;
 }
 

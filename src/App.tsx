@@ -46,6 +46,7 @@ import {
   listMaps,
   saveStoredMap,
   setCurrentMapId,
+  validateMapData,
   type ScoreRecord,
   type StoredMap,
 } from "./game/storage";
@@ -77,6 +78,22 @@ const enemyOrder: EnemyKind[] = [
   "warden",
   "boss",
 ];
+
+const loadBundledDefaultMap = async (
+  fallback: ReturnType<GameEngine["exportMapData"]>,
+) => {
+  try {
+    const response = await fetch(
+      encodeURI(publicAssetUrl("maps/내-전장-5.json")),
+      { cache: "no-store" },
+    );
+    if (!response.ok) throw new Error(`Bundled map request failed: ${response.status}`);
+    return validateMapData(await response.json());
+  } catch {
+    // Keep offline/local development functional when the static map is absent.
+    return fallback;
+  }
+};
 
 type GameButtonVariant = "primary" | "secondary" | "danger" | "icon" | "option";
 
@@ -1379,7 +1396,8 @@ export function App() {
   }, [showVolume]);
   useEffect(() => {
     let cancelled = false;
-    initializeMaps(engine.exportMapData())
+    loadBundledDefaultMap(engine.exportMapData())
+      .then((defaultMap) => initializeMaps(defaultMap, "내 전장 5"))
       .then(async ({ maps: storedMaps, current }) => {
         if (cancelled) return;
         currentMapRef.current = current;
