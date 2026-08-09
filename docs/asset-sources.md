@@ -2,17 +2,17 @@
 
 | Asset | Source type | Tool | Purpose |
 |---|---|---|---|
-| `assets/imagegen/allies-source.png` | generated | OpenAI built-in ImageGen | Six allied character source board |
-| `assets/imagegen/enemies-source.png` | generated | OpenAI built-in ImageGen | Four enemies and commander source board |
-| `assets/imagegen/props-source.png` | generated | OpenAI built-in ImageGen | Eight reusable battlefield props |
-| `assets/imagegen/build-props-source.png` | generated | OpenAI built-in ImageGen | Eight administrator BUILD-mode structures |
-| `assets/imagegen/terrain-source.png` | generated | OpenAI built-in ImageGen | Eight map-editor terrain decals |
-| `assets/imagegen/floor-materials-source.png` | generated | OpenAI built-in ImageGen | Eight grid-aligned floor material tiles |
-| `public/assets/units/*.png` | derived | Chroma removal + Pillow normalization | Runtime transparent unit sprites |
-| `public/assets/props/*.png` | derived | Chroma removal + Pillow normalization | Runtime battlefield decorations |
-| `public/assets/build/*.png` | derived | Chroma removal + Pillow normalization | Runtime BUILD-mode construction sprites |
-| `public/assets/terrain/*.png` | derived | Chroma removal + Pillow normalization | Runtime map-editor terrain sprites |
-| `public/assets/floor/*.png` | derived | Chroma removal + Pillow normalization | Runtime 2:1 isometric floor tiles |
+| `assets/imagegen/allies-source.webp` | generated | OpenAI built-in ImageGen | Six allied character source board |
+| `assets/imagegen/enemies-source.webp` | generated | OpenAI built-in ImageGen | Four enemies and commander source board |
+| `assets/imagegen/props-source.webp` | generated | OpenAI built-in ImageGen | Eight reusable battlefield props |
+| `assets/imagegen/build-props-source.webp` | generated | OpenAI built-in ImageGen | Eight administrator BUILD-mode structures |
+| `assets/imagegen/terrain-source.webp` | generated | OpenAI built-in ImageGen | Eight map-editor terrain decals |
+| `assets/imagegen/floor-materials-source.webp` | generated | OpenAI built-in ImageGen | Eight grid-aligned floor material tiles |
+| `public/assets/units/*.webp` | derived | ImageGen + Pillow normalization/WebP encoding | Runtime transparent unit sprites |
+| `public/assets/build/*.webp` | derived | Chroma removal + Pillow normalization/WebP encoding | Runtime BUILD-mode construction sprites |
+| `public/assets/terrain/*.webp` | derived | Chroma removal + Pillow normalization/WebP encoding | Runtime map-editor terrain sprites |
+| `public/assets/floor/*.webp` | derived | Chroma removal + Pillow normalization/WebP encoding | Runtime 2:1 isometric floor tiles |
+| `public/assets/icons/*.png` | derived | Pillow normalization | Favicon, Apple Touch, and PWA install icons; PNG retained for platform compatibility |
 
 Build sheet prompt summary: strict 4×2 isometric sprite sheet containing a blue command tent, watchtower, sandbags, radar, generator, medic station, antenna, and lamp post; hand-painted tower-defense style with dark outlines on a flat magenta chroma background. The built-in ImageGen tool was used, followed by local chroma removal and Pillow normalization.
 

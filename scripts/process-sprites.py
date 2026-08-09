@@ -1,33 +1,19 @@
-"""Split generated 3x2 contact sheets into normalized transparent game sprites."""
+"""Split the active map-editor sheets into normalized WebP game sprites."""
 from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "public" / "assets" / "units"
-OUT.mkdir(parents=True, exist_ok=True)
 
 SHEETS = [
-    (ROOT / "assets" / "approved" / "allies-sheet.png", 3, OUT, [
-        "ally_rifle", "ally_gunner", "ally_cryo",
-        "ally_bomber", "ally_sniper", "ally_tesla",
-    ]),
-    (ROOT / "assets" / "approved" / "enemies-sheet.png", 3, OUT, [
-        "enemy_grunt", "enemy_runner", "enemy_armored",
-        "enemy_elite", "boss_commander", None,
-    ]),
-    (ROOT / "assets" / "approved" / "props-sheet.png", 4, ROOT / "public" / "assets" / "props", [
-        "barrier", "rocks", "pine", "crates",
-        "barrels", "allied_flag", "floodlight", "terminal",
-    ]),
-    (ROOT / "assets" / "approved" / "build-props-sheet.png", 4, ROOT / "public" / "assets" / "build", [
+    (ROOT / "assets" / "approved" / "build-props-sheet.webp", 4, ROOT / "public" / "assets" / "build", [
         "command_tent", "watchtower", "sandbags", "radar",
         "generator", "medic_station", "antenna", "lamp_post",
     ]),
-    (ROOT / "assets" / "approved" / "terrain-sheet.png", 4, ROOT / "public" / "assets" / "terrain", [
+    (ROOT / "assets" / "approved" / "terrain-sheet.webp", 4, ROOT / "public" / "assets" / "terrain", [
         "rock_outcrop", "grass_patch", "dirt_mound", "crater",
         "mud_puddle", "ruin_slab", "shrubs", "road_plate",
     ]),
-    (ROOT / "assets" / "approved" / "floor-materials-sheet.png", 4, ROOT / "public" / "assets" / "floor", [
+    (ROOT / "assets" / "approved" / "floor-materials-sheet.webp", 4, ROOT / "public" / "assets" / "floor", [
         "floor_grass", "floor_earth", "floor_concrete", "floor_asphalt",
         "floor_mud", "floor_steel", "floor_gravel", "floor_stone",
     ]),
@@ -47,9 +33,8 @@ for sheet_path, columns, output_dir, names in SHEETS:
         if not bbox:
             raise RuntimeError(f"No visible pixels found for {name}")
         sprite = cell.crop(bbox)
-        is_prop = "props-sheet" in sheet_path.name
         is_floor = "floor-materials" in sheet_path.name
-        max_width, max_height = (236, 240) if name == "boss_commander" else ((238, 224) if is_prop else (230, 232))
+        max_width, max_height = (230, 232)
         scale = min(max_width / sprite.width, max_height / sprite.height)
         size = (248, 124) if is_floor else (max(1, round(sprite.width * scale)), max(1, round(sprite.height * scale)))
         sprite = sprite.resize(size, Image.Resampling.LANCZOS)
@@ -57,5 +42,11 @@ for sheet_path, columns, output_dir, names in SHEETS:
         x = (256 - sprite.width) // 2
         y = (256 - sprite.height) // 2 if is_floor else 248 - sprite.height
         canvas.alpha_composite(sprite, (x, y))
-        canvas.save(output_dir / f"{name}.png", optimize=True)
+        canvas.save(
+            output_dir / f"{name}.webp",
+            "WEBP",
+            quality=92,
+            method=6,
+            exact=True,
+        )
         print(f"{name}: {sprite.width}x{sprite.height}, pivot=(128,248)")

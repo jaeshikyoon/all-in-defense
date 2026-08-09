@@ -367,14 +367,14 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
   await Promise.all(
     (Object.keys(allyFiles) as UnitKind[]).map(async (kind) => {
       allyTextures[kind] = await Assets.load(
-        publicAssetUrl(`assets/units/${allyFiles[kind]}.png`),
+        publicAssetUrl(`assets/units/${allyFiles[kind]}.webp`),
       );
     }),
   );
   await Promise.all(
     (Object.keys(enemyFiles) as EnemyKind[]).map(async (kind) => {
       enemyTextures[kind] = await Assets.load(
-        publicAssetUrl(`assets/units/${enemyFiles[kind]}.png`),
+        publicAssetUrl(`assets/units/${enemyFiles[kind]}.webp`),
       );
     }),
   );
@@ -388,7 +388,7 @@ export async function mountBoard(host: HTMLElement, engine: GameEngine) {
               ? "terrain"
               : "build";
       buildTextures[name] = await Assets.load(
-        publicAssetUrl(`assets/${folder}/${name}.png`),
+        publicAssetUrl(`assets/${folder}/${name}.webp`),
       );
     }),
   );

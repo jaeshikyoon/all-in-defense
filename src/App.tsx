@@ -375,7 +375,7 @@ function EnemyGuide({ onClose, snap }: { onClose: () => void; snap: Snapshot }) 
             return (
               <article key={kind} className={unlocked ? "" : "locked-enemy"}>
                 <img
-                  src={publicAssetUrl(`assets/units/${ENEMY_ASSET_FILES[kind]}.png`)}
+                  src={publicAssetUrl(`assets/units/${ENEMY_ASSET_FILES[kind]}.webp`)}
                   alt={enemy.name}
                   draggable={false}
                 />
@@ -524,7 +524,7 @@ function PokerModal({ snap, onExit }: { snap: Snapshot; onExit: () => void }) {
                   <article key={handRank}>
                     <span>{HAND_PROBABILITY[handRank]}</span>
                     <img
-                      src={publicAssetUrl(`assets/units/${UNIT_ASSET_FILES[kind]}.png`)}
+                      src={publicAssetUrl(`assets/units/${UNIT_ASSET_FILES[kind]}.webp`)}
                       alt={UNITS[kind].name}
                       draggable={false}
                     />
@@ -774,7 +774,7 @@ function BuildControls({
               onMobileDismiss();
             }}
           >
-            <img src={publicAssetUrl(`assets/${folder}/${kind}.png`)} alt="" />
+            <img src={publicAssetUrl(`assets/${folder}/${kind}.webp`)} alt="" />
             <span>{item.name}</span>
             <small className="asset-footprint">
               {footprintWidth}×{footprintHeight} GRID
@@ -2071,7 +2071,7 @@ export function App() {
                   engine.start();
                 }}
               >
-                <img src={publicAssetUrl("assets/ui/menu-play.jpg")} alt="" />
+                <img src={publicAssetUrl("assets/ui/menu-play.webp")} alt="" />
                 <span>게임 시작</span>
               </button>
               <button
@@ -2079,14 +2079,14 @@ export function App() {
                 disabled={!storageReady}
                 onClick={() => void openBuilder()}
               >
-                <img src={publicAssetUrl("assets/ui/menu-builder.jpg")} alt="" />
+                <img src={publicAssetUrl("assets/ui/menu-builder.webp")} alt="" />
                 <span>MAP BUILD</span>
               </button>
               <button
                 className="home-image-action home-ranking"
                 onClick={() => setShowRanking(true)}
               >
-                <img src={publicAssetUrl("assets/ui/menu-ranking.jpg")} alt="" />
+                <img src={publicAssetUrl("assets/ui/menu-ranking.webp")} alt="" />
                 <span>LOCAL RANKING</span>
               </button>
             </div>
