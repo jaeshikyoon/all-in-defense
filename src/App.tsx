@@ -11,6 +11,11 @@ import { gameAudio } from "./game/AudioManager";
 import { circularIndex, sortBattlefieldsByName } from "./game/ui";
 import { publicAssetUrl } from "./game/assets";
 import {
+  findScorePlacement,
+  getOperationGrade,
+  getOperationGradeAsset,
+} from "./game/result";
+import {
   BUILDINGS,
   ENEMIES,
   ENEMY_ASSET_FILES,
@@ -226,6 +231,11 @@ const formatPlayTime = (seconds: number) => {
     ? `${hours}:${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`
     : `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
 };
+
+type DefeatRankingState =
+  | { status: "saving" }
+  | { status: "saved"; recordId: string; rank: number; total: number }
+  | { status: "error" };
 
 async function enterMobileLandscape(root: HTMLElement | null) {
   const isTouchDevice = navigator.maxTouchPoints > 0 ||
@@ -1126,7 +1136,7 @@ function RankingModal({
                 <strong>{String(index + 1).padStart(2, "0")}</strong>
                 <div>
                   <b>{score.kills.toLocaleString()} KILLS</b>
-                  <span>PHASE {score.phase} · {Math.floor(score.elapsedSeconds / 60)}:{String(Math.floor(score.elapsedSeconds % 60)).padStart(2, "0")}</span>
+                  <span>PHASE {score.phase} · {formatPlayTime(score.elapsedSeconds)}</span>
                 </div>
                 <time>{new Date(score.playedAt).toLocaleDateString("ko-KR")}</time>
               </li>
@@ -1350,6 +1360,7 @@ export function App() {
     [maps, setMaps] = useState<StoredMap[]>([]),
     [currentMap, setCurrentMap] = useState<StoredMap | null>(null),
     [scores, setScores] = useState<ScoreRecord[]>([]),
+    [defeatRanking, setDefeatRanking] = useState<DefeatRankingState | null>(null),
     [storageReady, setStorageReady] = useState(false),
     [storageError, setStorageError] = useState("");
   const currentMapRef = useRef<StoredMap | null>(null),
@@ -1469,22 +1480,51 @@ export function App() {
   useEffect(() => {
     if (snap.state !== "defeat") {
       defeatRecorded.current = false;
+      setDefeatRanking(null);
       return;
     }
     const selectedMap = currentMapRef.current;
     if (!selectedMap || defeatRecorded.current) return;
     defeatRecorded.current = true;
-    void addScore({
-      mapId: selectedMap.id,
-      mapRevision: selectedMap.revision,
-      kills: snap.kills,
-      phase: snap.phase,
-      elapsedSeconds: snap.elapsed,
-    }).then(async () => {
-      const nextScores = await getMapScores(selectedMap.id, selectedMap.revision);
-      setScores(nextScores);
-      engine.setBestKills(nextScores[0]?.kills ?? 0);
-    });
+    setDefeatRanking({ status: "saving" });
+    let cancelled = false;
+    void (async () => {
+      try {
+        const record = await addScore({
+          mapId: selectedMap.id,
+          mapRevision: selectedMap.revision,
+          kills: snap.kills,
+          phase: snap.phase,
+          elapsedSeconds: snap.elapsed,
+        });
+        const nextScores = await getMapScores(
+          selectedMap.id,
+          selectedMap.revision,
+        );
+        const activeMap = currentMapRef.current;
+        if (
+          cancelled ||
+          activeMap?.id !== selectedMap.id ||
+          activeMap.revision !== selectedMap.revision ||
+          engine.getSnapshot().state !== "defeat"
+        ) {
+          return;
+        }
+        const placement = findScorePlacement(nextScores, record.id);
+        setScores(nextScores);
+        engine.setBestKills(nextScores[0]?.kills ?? 0);
+        setDefeatRanking(
+          placement
+            ? { status: "saved", recordId: record.id, ...placement }
+            : { status: "error" },
+        );
+      } catch {
+        if (!cancelled) setDefeatRanking({ status: "error" });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [snap.state, snap.kills, snap.phase, snap.elapsed]);
   useEffect(() => {
     if (!host.current) return;
@@ -1652,14 +1692,17 @@ export function App() {
     }
   };
   const selected = snap.selectedUnit,
-    grade =
-      snap.kills >= 1000
-        ? "S"
-        : snap.kills >= 500
-          ? "A"
-          : snap.kills >= 200
-            ? "B"
-            : "C";
+    grade = getOperationGrade(snap.kills),
+    gradeAsset = getOperationGradeAsset(grade),
+    formattedKillScore = snap.kills.toLocaleString(),
+    defeatScoreClass =
+      formattedKillScore.length >= 13
+        ? "compact"
+        : formattedKillScore.length >= 10
+          ? "condensed"
+          : "",
+    currentDefeatRecordId =
+      defeatRanking?.status === "saved" ? defeatRanking.recordId : null;
   const activeBuilderTool =
     snap.buildTool === "erase"
       ? "삭제"
@@ -2141,41 +2184,102 @@ export function App() {
       )}
       {snap.state === "defeat" && (
         <div className="modal-back defeat-back">
-          <section className="end-card panel" role="dialog" aria-modal="true">
-            <div className="defeat-heading">
-              <div className="grade" aria-label={`작전 등급 ${grade}`}>
-                {grade}
+          <section
+            className="end-card panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="defeat-title"
+          >
+            <header className="defeat-heading">
+              <div
+                className={`operation-grade${gradeAsset ? " has-asset" : " fallback"}`}
+                aria-label={`작전 등급 ${grade}`}
+              >
+                {gradeAsset ? (
+                  <img src={publicAssetUrl(gradeAsset)} alt="" />
+                ) : (
+                  <span>{grade}</span>
+                )}
               </div>
-              <div>
-                <span className="eyebrow">DEFENSE LINE LOST</span>
-                <h2>게이트 함락</h2>
-                <p>방어 작전 기록이 전장 랭킹에 저장되었습니다.</p>
+              <div className="defeat-title">
+                <span className="eyebrow">OPERATION RESULT</span>
+                <h2 id="defeat-title">게이트 함락</h2>
               </div>
+              <div
+                className={`defeat-placement ${defeatRanking?.status ?? "idle"}`}
+                aria-live="polite"
+              >
+                <span>이번 기록</span>
+                {defeatRanking?.status === "saved" ? (
+                  <b>
+                    #{defeatRanking.rank}
+                    <small> / {defeatRanking.total}</small>
+                  </b>
+                ) : defeatRanking?.status === "error" ? (
+                  <b>저장 실패</b>
+                ) : (
+                  <b>집계 중…</b>
+                )}
+              </div>
+            </header>
+
+            <div className="defeat-body">
+              <section className="defeat-result" aria-label="최종 작전 기록">
+                <span>최종 처치 점수</span>
+                <strong className={defeatScoreClass}>{formattedKillScore}</strong>
+                <div className="defeat-meta">
+                  <div>
+                    <small>생존 PHASE</small>
+                    <b>{snap.phase}</b>
+                  </div>
+                  <div>
+                    <small>작전 시간</small>
+                    <b>{formatPlayTime(snap.elapsed)}</b>
+                  </div>
+                </div>
+              </section>
+
+              <section className="defeat-ranking" aria-label="전장 로컬 랭킹">
+                <header>
+                  <div>
+                    <span>LOCAL RANKING</span>
+                    <b>{currentMap?.name ?? "현재 전장"}</b>
+                  </div>
+                  <small>처치 수 기준</small>
+                </header>
+                {scores.length ? (
+                  <ol>
+                    {scores.slice(0, 3).map((score, index) => {
+                      const isCurrent = score.id === currentDefeatRecordId;
+                      return (
+                        <li
+                          key={score.id}
+                          className={isCurrent ? "current" : ""}
+                          aria-current={isCurrent ? "true" : undefined}
+                        >
+                          <span>{index + 1}</span>
+                          <div>
+                            <b>{score.kills.toLocaleString()}</b>
+                            <small>
+                              PHASE {score.phase} · {formatPlayTime(score.elapsedSeconds)}
+                            </small>
+                          </div>
+                          {isCurrent && <em>현재</em>}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                ) : (
+                  <div className="defeat-ranking-empty">
+                    {defeatRanking?.status === "error"
+                      ? "랭킹을 불러오지 못했습니다."
+                      : "첫 기록을 집계하고 있습니다."}
+                  </div>
+                )}
+              </section>
             </div>
-            <div className="defeat-stats">
-              <article className="featured">
-                <span>처치</span>
-                <b>{snap.kills.toLocaleString()}</b>
-              </article>
-              <article>
-                <span>생존 PHASE</span>
-                <b>{snap.phase}</b>
-              </article>
-              <article>
-                <span>작전 시간</span>
-                <b>{formatPlayTime(snap.elapsed)}</b>
-              </article>
-              <article>
-                <span>총 피해</span>
-                <b>{Math.round(snap.totalDamage).toLocaleString()}</b>
-              </article>
-            </div>
-            <div className="defeat-summary">
-              <span>최고 기록 <b>{snap.bestKills.toLocaleString()}</b></span>
-              <i aria-hidden="true" />
-              <span>잔존 유닛 <b>{snap.units}</b></span>
-            </div>
-            <div className="defeat-actions">
+
+            <footer className="defeat-actions">
               <GameButton variant="secondary" onClick={() => engine.reset()}>
                 전장 선택
               </GameButton>
@@ -2188,7 +2292,7 @@ export function App() {
               >
                 다시 도전
               </GameButton>
-            </div>
+            </footer>
           </section>
         </div>
       )}

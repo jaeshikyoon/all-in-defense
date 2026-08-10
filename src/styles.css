@@ -1156,33 +1156,6 @@ button {
   color: #071219;
   background: #57e8c2;
 }
-.end-card {
-  width: 430px;
-  border-radius: 15px;
-  text-align: center;
-  padding: 45px;
-}
-.end-card h2 {
-  font: 42px "Black Han Sans";
-  margin: 15px;
-}
-.end-card > div {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3px;
-  margin: 28px;
-}
-.end-card > div b {
-  font-size: 25px;
-}
-.end-card > div span {
-  font-size: var(--game-font-min);
-  color: #77919d;
-}
-.end-card > .primary {
-  height: 46px;
-  width: 190px;
-}
 .rotate {
   display: none;
 }
@@ -1937,36 +1910,6 @@ button {
   background: #57e8c2;
   color: #06141c;
   font-weight: 900;
-}
-.end-card > .grade {
-  display: grid;
-  place-items: center;
-  width: 75px;
-  height: 75px;
-  margin: 0 auto !important;
-  border: 2px solid #ffcf70;
-  border-radius: 50%;
-  font:
-    45px Impact,
-    sans-serif;
-  color: #ffcf70;
-  box-shadow: 0 0 25px #ffcf7044;
-}
-.end-card > small {
-  display: block;
-  color: #78909b;
-  margin: -13px 0 22px;
-  font-size: var(--game-font-min);
-}
-.end-card > div:not(.grade) {
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  margin: 22px 0 30px;
-}
-.end-card {
-  width: 520px;
-}
-.end-card h2 {
-  margin-top: 10px;
 }
 @media (max-width: 900px) and (orientation: landscape) {
   .loot-banner {
@@ -3275,15 +3218,6 @@ em {
   font-size: 12px;
   color: #c1d2d8;
 }
-.end-card > div span {
-  font-size: var(--game-font-min);
-  color: #b9cbd2;
-}
-.end-card > small {
-  font-size: var(--game-font-min);
-  color: #b9cbd2;
-}
-
 @media (max-width: 900px) and (orientation: landscape) {
   .brand small {
     font-size: var(--game-font-min);
@@ -4630,8 +4564,7 @@ button.close.game-button-icon,
 
   .poker-modal,
   .enemy-guide,
-  .ranking-modal,
-  .end-card {
+  .ranking-modal {
     width: min(880px, 100%);
     max-height: calc(100dvh - 14px);
     padding: 10px 16px;
@@ -4862,166 +4795,556 @@ button.close.game-button-icon,
   }
 }
 
-.end-card {
+.defeat-back {
   box-sizing: border-box;
-  width: min(600px, calc(100vw - 56px));
-  padding: 38px 42px 34px;
+  padding: clamp(28px, 4vw, 52px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.defeat-back .end-card {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto minmax(0, auto) auto;
+  gap: 20px;
+  width: min(780px, calc(100vw - 72px));
+  max-height: calc(100dvh - 72px);
+  margin: auto;
+  padding: 30px 36px 28px;
+  overflow: visible;
   border-radius: 12px;
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 184, 77, 0.08), transparent 42%),
-    linear-gradient(155deg, rgba(9, 28, 39, 0.98), rgba(4, 16, 24, 0.99));
+    radial-gradient(circle at 17% 6%, rgba(255, 190, 83, 0.1), transparent 32%),
+    radial-gradient(circle at 86% 52%, rgba(47, 205, 215, 0.08), transparent 34%),
+    linear-gradient(155deg, rgba(9, 28, 39, 0.99), rgba(4, 16, 24, 0.995));
   text-align: left;
 }
 
-.end-card > .defeat-heading {
-  display: flex;
-  grid-template-columns: none;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  margin: 0 0 28px;
-}
-
-.end-card .grade {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 82px;
-  height: 82px;
+.defeat-back .end-card > * {
+  min-width: 0;
   margin: 0;
-  border: 2px solid #ffca68;
-  border-radius: 50%;
-  color: #ffca68;
-  font: 46px/1 Impact, sans-serif;
-  box-shadow: inset 0 0 24px rgba(255, 202, 104, 0.08), 0 0 26px rgba(255, 202, 104, 0.13);
 }
 
-.end-card .defeat-heading h2 {
-  margin: 5px 0 2px;
+.defeat-back .defeat-heading {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+}
+
+.operation-grade {
+  display: grid;
+  width: 112px;
+  height: 94px;
+  place-items: center;
+}
+
+.operation-grade img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 7px 10px rgba(0, 0, 0, 0.58));
+}
+
+.operation-grade.fallback span {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border: 2px solid #d8b15f;
+  border-radius: 50%;
+  color: #f6cc75;
+  background: radial-gradient(circle, rgba(102, 76, 26, 0.24), rgba(5, 19, 27, 0.82));
+  font: 42px/1 Impact, sans-serif;
+  box-shadow: inset 0 0 22px rgba(255, 202, 104, 0.08), 0 0 22px rgba(255, 202, 104, 0.12);
+}
+
+.defeat-title {
+  min-width: 0;
+}
+
+.defeat-title .eyebrow {
+  color: #77d9cf;
+  letter-spacing: 3px;
+}
+
+.defeat-title h2 {
+  margin: 6px 0 0;
   color: #effaff;
-  font: 38px/1.1 "Black Han Sans", sans-serif;
+  font: 38px/1.05 "Black Han Sans", sans-serif;
   letter-spacing: -1px;
 }
 
-.end-card .defeat-heading p {
-  margin: 7px 0 0;
-  color: #849ba7;
+.defeat-placement {
+  min-width: 118px;
+  padding: 10px 13px;
+  border: 1px solid rgba(92, 145, 163, 0.32);
+  border-radius: 8px;
+  background: rgba(5, 18, 27, 0.78);
+  text-align: right;
+}
+
+.defeat-placement span {
+  display: block;
+  margin-bottom: 4px;
+  color: #88a0aa;
   font-size: var(--game-font-min);
 }
 
-.end-card > .defeat-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin: 0;
-}
-
-.defeat-stats article {
-  min-width: 0;
-  padding: 15px 10px 13px;
-  border: 1px solid rgba(92, 145, 163, 0.24);
-  border-radius: 8px;
-  background: rgba(6, 20, 29, 0.8);
-  text-align: center;
-}
-
-.defeat-stats article.featured {
-  border-color: rgba(255, 202, 104, 0.4);
-  background: linear-gradient(180deg, rgba(84, 61, 25, 0.28), rgba(6, 20, 29, 0.84));
-}
-
-.defeat-stats span {
+.defeat-placement b {
   display: block;
-  margin-bottom: 5px;
-  color: #86a0ab;
+  color: #f7cf78;
+  font-size: 23px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.defeat-placement b small {
+  color: #8098a2;
+  font-size: var(--game-font-min);
+}
+
+.defeat-placement.saving b,
+.defeat-placement.idle b {
+  color: #9ddfd7;
+  font-size: 14px;
+}
+
+.defeat-placement.error {
+  border-color: rgba(227, 101, 112, 0.42);
+}
+
+.defeat-placement.error b {
+  color: #ffabb3;
+  font-size: 14px;
+}
+
+.defeat-back .defeat-body {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(330px, 1.18fr);
+  gap: 14px;
+  min-height: 0;
+}
+
+.defeat-result,
+.defeat-ranking {
+  min-width: 0;
+  border: 1px solid rgba(80, 133, 151, 0.3);
+  border-radius: 9px;
+  background: rgba(4, 17, 25, 0.8);
+}
+
+.defeat-result {
+  display: flex;
+  min-height: 190px;
+  padding: 20px;
+  flex-direction: column;
+  justify-content: center;
+  border-color: rgba(215, 169, 79, 0.34);
+  background:
+    radial-gradient(circle at 30% 15%, rgba(207, 154, 57, 0.13), transparent 54%),
+    rgba(4, 17, 25, 0.86);
+}
+
+.defeat-result > span {
+  color: #adbdc3;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.defeat-result > strong {
+  display: block;
+  margin: 7px 0 18px;
+  overflow: visible;
+  color: #fff2cf;
+  font: clamp(42px, 5vw, 62px)/0.95 "Black Han Sans", sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -2px;
+  white-space: nowrap;
+}
+
+.defeat-result > strong.condensed {
+  font-size: clamp(36px, 3.7vw, 48px);
+}
+
+.defeat-result > strong.compact {
+  font-size: clamp(29px, 3vw, 38px);
+  letter-spacing: -1.5px;
+}
+
+.defeat-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.defeat-meta > div {
+  min-width: 0;
+  padding: 9px 10px;
+  border-top: 1px solid rgba(91, 132, 146, 0.26);
+}
+
+.defeat-meta small,
+.defeat-meta b {
+  display: block;
+}
+
+.defeat-meta small {
+  color: #7f98a2;
   font-size: var(--game-font-min);
   white-space: nowrap;
 }
 
-.defeat-stats b {
-  display: block;
-  overflow: hidden;
-  color: #edf8fc;
-  font-size: clamp(17px, 2vw, 23px);
-  line-height: 1.15;
-  text-overflow: ellipsis;
+.defeat-meta b {
+  margin-top: 4px;
+  color: #dcecef;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
 }
 
-.end-card > .defeat-summary {
+.defeat-ranking {
+  min-height: 190px;
+  padding: 14px;
+}
+
+.defeat-ranking > header {
   display: flex;
-  grid-template-columns: none;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  margin: 18px 0 23px;
-  color: #91a7b0;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.defeat-ranking > header div {
+  min-width: 0;
+}
+
+.defeat-ranking > header span,
+.defeat-ranking > header b {
+  display: block;
+}
+
+.defeat-ranking > header span {
+  color: #67d5c8;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.defeat-ranking > header b {
+  margin-top: 3px;
+  overflow: hidden;
+  color: #dae8eb;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.defeat-ranking > header small {
+  flex: 0 0 auto;
+  color: #728b95;
   font-size: var(--game-font-min);
 }
 
-.defeat-summary b {
-  margin-left: 5px;
-  color: #d7e8ed;
-}
-
-.defeat-summary i {
-  width: 1px;
-  height: 13px;
-  background: #38515c;
-}
-
-.end-card > .defeat-actions {
+.defeat-ranking ol {
   display: grid;
-  grid-template-columns: minmax(120px, 0.7fr) minmax(180px, 1.3fr);
-  gap: 10px;
+  gap: 5px;
   margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.defeat-ranking li {
+  display: grid;
+  min-width: 0;
+  min-height: 43px;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 9px;
+  border: 1px solid rgba(67, 103, 116, 0.34);
+  border-radius: 6px;
+  background: rgba(9, 28, 37, 0.74);
+}
+
+.defeat-ranking li.current {
+  border-color: rgba(108, 226, 207, 0.62);
+  background: linear-gradient(90deg, rgba(26, 79, 76, 0.56), rgba(10, 29, 37, 0.76));
+  box-shadow: inset 3px 0 #6ce2cf;
+}
+
+.defeat-ranking li > span {
+  color: #78919a;
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.defeat-ranking li:first-child > span {
+  color: #f1c86f;
+}
+
+.defeat-ranking li div {
+  min-width: 0;
+}
+
+.defeat-ranking li b,
+.defeat-ranking li small {
+  display: block;
+}
+
+.defeat-ranking li b {
+  color: #edf7f9;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.defeat-ranking li small {
+  color: #7f98a1;
+  font-size: var(--game-font-min);
+  white-space: nowrap;
+}
+
+.defeat-ranking li em {
+  padding: 3px 6px;
+  border-radius: 999px;
+  color: #b4fff1;
+  background: rgba(51, 157, 142, 0.28);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.defeat-ranking-empty {
+  display: grid;
+  min-height: 130px;
+  place-items: center;
+  color: #859ba4;
+  font-size: var(--game-font-min);
+  text-align: center;
+}
+
+.defeat-back .defeat-actions {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.72fr) minmax(190px, 1.28fr);
+  gap: 10px;
 }
 
 .defeat-actions .game-button {
+  width: 100%;
   min-height: 50px;
   font-size: 15px;
 }
 
-@media (max-width: 900px) and (orientation: landscape) {
+@media (max-width: 900px) and (orientation: landscape),
+       (max-height: 500px) and (orientation: landscape) {
   .defeat-back {
-    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding:
+      max(9px, env(safe-area-inset-top))
+      max(14px, env(safe-area-inset-right))
+      max(9px, env(safe-area-inset-bottom))
+      max(14px, env(safe-area-inset-left));
   }
 
   .defeat-back .end-card {
-    width: min(660px, calc(100vw - 56px));
+    width: min(760px, 100%);
     height: auto;
-    max-height: calc(100dvh - 24px);
-    padding: 22px 30px 20px;
+    max-height: none;
+    padding: 14px 20px 13px;
+    gap: 9px;
   }
 
-  .end-card > .defeat-heading {
-    gap: 18px;
-    margin-bottom: 17px;
+  .defeat-back .end-card::before {
+    inset: -7px;
+    border-width: 18px;
+    border-image-width: 18px;
   }
 
-  .end-card .grade {
-    width: 62px;
-    height: 62px;
-    font-size: 36px;
+  .defeat-back .defeat-heading {
+    grid-template-columns: 78px minmax(0, 1fr) auto;
+    gap: 11px;
   }
 
-  .end-card .defeat-heading h2 {
+  .operation-grade {
+    width: 78px;
+    height: 64px;
+  }
+
+  .operation-grade.fallback span {
+    width: 50px;
+    height: 50px;
     font-size: 29px;
   }
 
-  .end-card .defeat-heading p {
+  .defeat-title .eyebrow {
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+
+  .defeat-title h2 {
     margin-top: 3px;
+    font-size: 25px;
   }
 
-  .defeat-stats article {
-    padding: 9px 8px;
+  .defeat-placement {
+    min-width: 104px;
+    padding: 7px 9px;
   }
 
-  .end-card > .defeat-summary {
-    margin: 12px 0 14px;
+  .defeat-placement span {
+    margin-bottom: 2px;
+  }
+
+  .defeat-placement b {
+    font-size: 19px;
+  }
+
+  .defeat-back .defeat-body {
+    grid-template-columns: minmax(185px, 0.78fr) minmax(290px, 1.22fr);
+    gap: 9px;
+  }
+
+  .defeat-result,
+  .defeat-ranking {
+    min-height: 0;
+  }
+
+  .defeat-result {
+    padding: 10px 13px;
+  }
+
+  .defeat-result > span {
+    font-size: var(--game-font-min);
+  }
+
+  .defeat-result > strong {
+    margin: 4px 0 8px;
+    font-size: clamp(32px, 5.3vw, 44px);
+  }
+
+  .defeat-result > strong.condensed {
+    font-size: clamp(29px, 5vw, 38px);
+  }
+
+  .defeat-result > strong.compact {
+    font-size: clamp(25px, 4.2vw, 32px);
+  }
+
+  .defeat-meta {
+    gap: 4px;
+  }
+
+  .defeat-meta > div {
+    padding: 5px 6px;
+  }
+
+  .defeat-meta b {
+    margin-top: 2px;
+    font-size: 15px;
+  }
+
+  .defeat-ranking {
+    padding: 8px 10px;
+  }
+
+  .defeat-ranking > header {
+    margin-bottom: 5px;
+  }
+
+  .defeat-ranking > header b {
+    margin-top: 1px;
+    font-size: 12px;
+  }
+
+  .defeat-ranking ol {
+    gap: 3px;
+  }
+
+  .defeat-ranking li {
+    min-height: 34px;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    gap: 6px;
+    padding: 3px 7px;
+  }
+
+  .defeat-ranking li > span {
+    font-size: 15px;
+  }
+
+  .defeat-ranking li b {
+    font-size: 13px;
+  }
+
+  .defeat-ranking-empty {
+    min-height: 88px;
   }
 
   .defeat-actions .game-button {
-    min-height: 43px;
+    min-height: 40px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 640px) and (orientation: landscape) {
+  .defeat-back .end-card {
+    padding-inline: 14px;
+  }
+
+  .defeat-back .defeat-heading {
+    grid-template-columns: 64px minmax(0, 1fr) 91px;
+    gap: 7px;
+  }
+
+  .operation-grade {
+    width: 64px;
+    height: 54px;
+  }
+
+  .defeat-title h2 {
+    font-size: 21px;
+  }
+
+  .defeat-placement {
+    min-width: 0;
+    padding-inline: 7px;
+  }
+
+  .defeat-placement b,
+  .defeat-placement.saving b,
+  .defeat-placement.idle b,
+  .defeat-placement.error b {
+    font-size: 13px;
+  }
+
+  .defeat-back .defeat-body {
+    grid-template-columns: minmax(150px, 0.7fr) minmax(250px, 1.3fr);
+  }
+
+  .defeat-result {
+    padding-inline: 9px;
+  }
+
+  .defeat-result > strong {
+    font-size: clamp(29px, 6vw, 37px);
+  }
+
+
+  .defeat-result > strong.condensed {
+    font-size: clamp(26px, 5.5vw, 33px);
+  }
+
+  .defeat-result > strong.compact {
+    font-size: clamp(22px, 4.6vw, 28px);
+  }
+
+  .defeat-ranking > header small,
+  .defeat-ranking li small {
+    display: none;
   }
 }
 
@@ -5597,8 +5920,7 @@ button.close.game-button-icon,
   }
 
   .enemy-guide,
-  .ranking-modal,
-  .end-card {
+  .ranking-modal {
     box-sizing: border-box;
     width: calc(100vw - 16px);
     height: calc(100dvh - 16px);
@@ -5608,8 +5930,7 @@ button.close.game-button-icon,
   }
 
   .enemy-guide::before,
-  .ranking-modal::before,
-  .end-card::before {
+  .ranking-modal::before {
     inset: -5px;
     border-width: 16px;
     border-image-width: 16px;
